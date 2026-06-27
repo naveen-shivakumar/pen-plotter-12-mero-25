@@ -1,874 +1,625 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pen Plotter Controller - Hochschule Schmalkalden</title>
-    <style>
-        :root {
-            --bg-dark: #071630;
-            --sidebar-bg: #0b2246;
-            --sidebar-active: #163566;
-            --panel-bg: #091d3a;
-            --panel-border: #1a3c6d;
-            --text-main: #ffffff;
-            --text-muted: #8fa0ba;
-            --accent-blue: #225199;
-            --btn-light: #e2e8f0;
-            --btn-light-hover: #cbd5e1;
-            --text-dark: #0f172a;
-            --danger: #ef4444;
-            --danger-hover: #dc2626;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --action-cyan: #38bdf8;
-            --action-cyan-hover: #0ea5e9;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            display: flex;
-            flex-direction: row;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        /* --- SIDEBAR (DESKTOP) --- */
-        .sidebar {
-            width: 280px;
-            background-color: var(--sidebar-bg);
-            display: flex;
-            flex-direction: column;
-            border-right: 1px solid var(--panel-border);
-            z-index: 10;
-        }
-
-        .brand-container {
-            padding: 20px;
-            border-bottom: 1px solid var(--panel-border);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .uni-logo-img {
-            width: 100%;
-            height: auto;
-            max-height: 60px;
-            object-fit: contain;
-            filter: brightness(0) invert(1);
-        }
-
-        .nav-menu {
-            list-style: none;
-            padding: 15px 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 15px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-            color: var(--text-muted);
-            transition: all 0.2s ease;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .nav-item svg {
-            width: 18px;
-            height: 18px;
-            fill: currentColor;
-        }
-
-        .nav-item:hover {
-            background-color: rgba(255, 255, 255, 0.05);
-            color: var(--text-main);
-        }
-
-        .nav-item.active {
-            background-color: var(--sidebar-active);
-            color: var(--text-main);
-        }
-
-        /* --- MAIN CONTENT CONTAINER --- */
-        .main-layout {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding: 15px;
-            gap: 15px;
-            overflow-y: auto; /* Allow scrolling on smaller screens */
-            height: 100vh;
-        }
-
-        /* Responsive Top Row Grid */
-        .top-row {
-            display: grid;
-            grid-template-columns: 1fr 320px;
-            gap: 15px;
-            min-height: 0;
-            flex: 1;
-        }
-
-        .tab-content {
-            display: none;
-            grid-template-columns: subgrid;
-            grid-column: span 2;
-            gap: 15px;
-        }
-
-        .tab-content.active {
-            display: grid;
-        }
-
-        .panel {
-            background-color: var(--panel-bg);
-            border: 1px solid var(--panel-border);
-            border-radius: 6px;
-            padding: 18px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .visualizer-panel {
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: radial-gradient(circle, #0b2246 0%, #071630 100%);
-            min-height: 300px;
-        }
-
-        .plot-canvas {
-            border: 1px dashed rgba(255, 255, 255, 0.1);
-            width: 100%;
-            height: 100%;
-            max-height: 450px;
-        }
-
-        .control-panel {
-            justify-content: flex-start;
-        }
-
-        .panel-header {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: var(--text-main);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            text-align: center;
-            border-bottom: 1px solid var(--panel-border);
-            padding-bottom: 8px;
-        }
-
-        /* ESP Connection Badge */
-        .esp-status-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: rgba(0, 0, 0, 0.2);
-            padding: 10px 12px;
-            border-radius: 4px;
-            border: 1px solid var(--panel-border);
-            font-size: 0.8rem;
-        }
-
-        .esp-label {
-            font-weight: 600;
-            color: var(--text-muted);
-            letter-spacing: 0.5px;
-        }
-
-        .esp-badge {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-weight: bold;
-            color: var(--danger);
-            transition: color 0.3s ease;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            background-color: var(--danger);
-            border-radius: 50%;
-            box-shadow: 0 0 8px var(--danger);
-            transition: background-color 0.3s, box-shadow 0.3s;
-        }
-
-        /* Project Core Task Button Styling */
-        .primary-task-btn {
-            width: 100%;
-            padding: 14px;
-            background-color: var(--action-cyan);
-            color: var(--text-dark);
-            border: none;
-            border-radius: 6px;
-            font-weight: 700;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(56, 189, 248, 0.2);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-            transition: background-color 0.1s, transform 0.05s;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .primary-task-btn svg {
-            width: 18px;
-            height: 18px;
-            fill: var(--text-dark);
-        }
-
-        .primary-task-btn:hover {
-            background-color: var(--action-cyan-hover);
-        }
-
-        .primary-task-btn:active {
-            transform: scale(0.97);
-        }
-
-        /* D-Pad Manual Jog Layout */
-        .dpad-wrapper {
-            display: flex;
-            justify-content: center;
-            width: 100%;
-            padding: 5px 0;
-        }
-
-        .dpad-container {
-            display: grid;
-            grid-template-columns: repeat(3, 60px);
-            grid-template-rows: repeat(3, 60px);
-            gap: 10px;
-        }
-
-        .dpad-btn {
-            background-color: var(--btn-light);
-            border: none;
-            border-radius: 8px;
-            color: var(--text-dark);
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: background-color 0.1s, transform 0.05s;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .dpad-btn svg {
-            width: 24px;
-            height: 24px;
-            fill: var(--text-dark);
-        }
-
-        .dpad-btn:hover {
-            background-color: var(--btn-light-hover);
-        }
-
-        .dpad-btn:active {
-            transform: scale(0.94);
-        }
-
-        .dpad-btn.home-btn {
-            font-size: 0.8rem;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-
-        .speed-control-container {
-            width: 100%;
-        }
-
-        .speed-label-wrapper {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-
-        .speed-slider {
-            width: 100%;
-            -webkit-appearance: none;
-            appearance: none;
-            height: 8px;
-            border-radius: 4px;
-            background: var(--sidebar-active);
-            outline: none;
-            cursor: pointer;
-        }
-
-        .speed-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: var(--btn-light);
-            cursor: pointer;
-        }
-
-        .estop-btn {
-            width: 100%;
-            padding: 14px;
-            background-color: var(--danger);
-            color: var(--text-main);
-            border: none;
-            border-radius: 6px;
-            font-weight: 700;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-            transition: background-color 0.1s, transform 0.05s;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .estop-btn svg {
-            width: 16px;
-            height: 16px;
-            fill: currentColor;
-        }
-
-        .estop-btn:hover {
-            background-color: var(--danger-hover);
-        }
-
-        .estop-btn:active {
-            transform: scale(0.97);
-        }
-
-        /* --- SETTINGS VIEW STYLES --- */
-        .settings-panel {
-            grid-column: span 2;
-        }
-
-        .settings-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 20px;
-            margin-top: 10px;
-        }
-
-        .setting-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .setting-group label {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .setting-group input, .setting-group select {
-            background-color: rgba(0, 0, 0, 0.2);
-            border: 1px solid var(--panel-border);
-            border-radius: 4px;
-            padding: 12px;
-            color: var(--text-main);
-            outline: none;
-            font-size: 0.9rem;
-        }
-
-        .setting-group input:focus {
-            border-color: #38bdf8;
-        }
-
-        .save-btn {
-            padding: 14px;
-            background-color: var(--sidebar-active);
-            color: var(--text-main);
-            border: 1px solid var(--panel-border);
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 600;
-            margin-top: 10px;
-            transition: background-color 0.2s;
-        }
-
-        .save-btn:hover {
-            background-color: #1e4680;
-        }
-
-        /* --- GALLERY VIEW STYLES --- */
-        .gallery-panel {
-            grid-column: span 2;
-        }
-
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 15px;
-            margin-top: 10px;
-        }
-
-        .gallery-item {
-            background-color: rgba(0, 0, 0, 0.2);
-            border: 1px solid var(--panel-border);
-            border-radius: 6px;
-            padding: 12px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .gallery-item:hover {
-            border-color: #38bdf8;
-            background-color: rgba(255, 255, 255, 0.02);
-        }
-
-        .gallery-preview {
-            height: 100px;
-            background-color: rgba(7, 22, 48, 0.5);
-            border-radius: 4px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .gallery-title {
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        /* --- BOTTOM STATUS TERMINAL --- */
-        .bottom-row {
-            height: 180px;
-            min-height: 150px;
-            background-color: rgba(5, 15, 30, 0.95);
-            border: 1px solid var(--panel-border);
-            border-radius: 6px;
-            padding: 15px;
-            font-family: 'Courier New', Courier, monospace;
-            overflow-y: auto;
-            font-size: 0.85rem;
-            line-height: 1.5;
-            color: #d1d5db;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
-        }
-
-        .status-highlight { color: #38bdf8; font-weight: bold; }
-        .alert-highlight { color: var(--danger); font-weight: bold; }
-        .success-highlight { color: var(--success); font-weight: bold; }
-
-        /* ==========================================================================
-           MEDIA QUERY: MOBILE PHONES & TABLETS (BREAKPOINT)
-           ========================================================================== */
-        @media (max-width: 768px) {
-            body {
-                flex-direction: column; /* Stack sidebar on top or bottom */
-                overflow-y: auto;
-            }
-
-            /* Turn Sidebar into a Top Navigation Bar */
-            .sidebar {
-                width: 100%;
-                height: auto;
-                border-right: none;
-                border-bottom: 1px solid var(--panel-border);
-            }
-
-            .brand-container {
-                padding: 12px;
-            }
-
-            .uni-logo-img {
-                max-height: 45px;
-            }
-
-            .nav-menu {
-                flex-direction: row; /* Layout horizontal menu */
-                justify-content: space-around;
-                padding: 8px;
-                gap: 5px;
-            }
-
-            .nav-item {
-                flex: 1;
-                justify-content: center;
-                padding: 10px 5px;
-                font-size: 0.85rem;
-                gap: 6px;
-            }
-
-            /* Adjust Content Workspace */
-            .main-layout {
-                height: auto;
-                overflow-y: visible;
-                padding: 10px;
-            }
-
-            .top-row {
-                grid-template-columns: 1fr; /* Switch to single layout grid column */
-            }
-
-            .tab-content {
-                grid-template-columns: 1fr;
-                grid-column: span 1;
-            }
-
-            .visualizer-panel {
-                min-height: 240px;
-            }
-
-            .control-panel {
-                gap: 18px; /* Roomier spacing for touch interaction */
-            }
-
-            .dpad-container {
-                grid-template-columns: repeat(3, 65px); /* Slightly larger target layout for fingers */
-                grid-template-rows: repeat(3, 65px);
-            }
-
-            .bottom-row {
-                height: 150px;
-                margin-top: 10px;
-            }
-        }
-    </style>
-</head>
-<body>
-
-    <!-- SIDEBAR NAVIGATION / TOP MENU ON MOBILE -->
-    <div class="sidebar">
-        <div class="brand-container">
-            <img src="hsm logo.png" alt="Hochschule Schmalkalden Logo" class="uni-logo-img">
-        </div>
-        <ul class="nav-menu">
-            <li class="nav-item active" onclick="switchTab(this, 'main')">
-                <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69-.98l.38-2.65c.03-.24.24-.42.49-.42h4c.25 0 .46.18.49.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
-                <span>Control</span>
-            </li>
-            <li class="nav-item" onclick="switchTab(this, 'settings')">
-                <svg viewBox="0 0 24 24"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg>
-                <span>Settings</span>
-            </li>
-            <li class="nav-item" onclick="switchTab(this, 'gallery')">
-                <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
-                <span>Gallery</span>
-            </li>
-        </ul>
-    </div>
-
-    <!-- MAIN WORKSPACE -->
-    <div class="main-layout">
-        <div class="top-row">
-            
-            <!-- MAIN CONTROL TAB -->
-            <div id="tab-main" class="tab-content active">
-                <div class="panel visualizer-panel">
-                    <svg class="plot-canvas" id="main-vector-preview" viewBox="0 0 300 200">
-                        <polyline id="vector-path" points="" fill="none" stroke="#ffffff" stroke-width="2" stroke-dasharray="1 1" />
-                        <circle id="pen-tip" cx="-10" cy="-10" r="5" fill="#38bdf8" />
-                    </svg>
-                </div>
-
-                <div class="panel control-panel">
-                    <div class="panel-header">Machine Interface</div>
-                    
-                    <div class="esp-status-container">
-                        <span class="esp-label">ESP32 LINK</span>
-                        <div class="esp-badge" id="espBadge">
-                            <div class="status-dot" id="espDot"></div>
-                            <span id="espText">OFFLINE</span>
-                        </div>
-                    </div>
-
-                    <!-- Main Core Project Task Action Button -->
-                    <button class="primary-task-btn" onclick="executeNicholasHaus()">
-                        <svg viewBox="0 0 24 24"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3zm0 7.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-                        DRAW NICHOLAS HAUS
-                    </button>
-                    
-                    <div class="dpad-wrapper">
-                        <div class="dpad-container">
-                            <div></div>
-                            <button class="dpad-btn" onclick="sendDrive('Y+')">
-                                <svg viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
-                            </button>
-                            <div></div>
-                            
-                            <button class="dpad-btn" onclick="sendDrive('X-')">
-                                <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"/></svg>
-                            </button>
-                            <button class="dpad-btn home-btn" onclick="sendDrive('HOME')">Home</button>
-                            <button class="dpad-btn" onclick="sendDrive('X+')">
-                                <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
-                            </button>
-                            
-                            <div></div>
-                            <button class="dpad-btn" onclick="sendDrive('Y-')">
-                                <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
-                            </button>
-                            <div></div>
-                        </div>
-                    </div>
-
-                    <div class="speed-control-container">
-                        <div class="speed-label-wrapper">
-                            <span>FEEDRATE VELOCITY</span>
-                            <span id="speed-display">100%</span>
-                        </div>
-                        <input type="range" min="10" max="200" value="100" class="speed-slider" id="speedSlider" oninput="updateSpeed(this.value)">
-                    </div>
-
-                    <button class="estop-btn" onclick="triggerEmergencyStop()">
-                        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-                        EMERGENCY STOP
-                    </button>
-                </div>
-            </div>
-
-            <!-- SETTINGS TAB -->
-            <div id="tab-settings" class="tab-content">
-                <div class="panel settings-panel">
-                    <div class="panel-header" style="text-align: left;">Hardware Configuration</div>
-                    <div class="settings-grid">
-                        <div class="setting-group">
-                            <label>Steps per mm (X-Axis)</label>
-                            <input type="number" id="stepsX" value="80.00">
-                        </div>
-                        <div class="setting-group">
-                            <label>Steps per mm (Y-Axis)</label>
-                            <input type="number" id="stepsY" value="80.00">
-                        </div>
-                        <div class="setting-group">
-                            <label>Max Acceleration (mm/s²)</label>
-                            <input type="number" id="accel" value="500">
-                        </div>
-                        <div class="setting-group">
-                            <label>ESP32 Baud Rate</label>
-                            <select id="baudRate">
-                                <option value="115200">115200</option>
-                                <option value="250000">250000</option>
-                                <option value="96000">96000</option>
-                            </select>
-                        </div>
-                    </div>
-                    <button class="save-btn" onclick="saveSettings()">Flash Parameters to NVRAM</button>
-                </div>
-            </div>
-
-            <!-- GALLERY TAB -->
-            <div id="tab-gallery" class="tab-content">
-                <div class="panel gallery-panel">
-                    <div class="panel-header" style="text-align: left;">Available Vector Templates</div>
-                    <div class="gallery-grid">
-                        <div class="gallery-item" onclick="loadVector('star')">
-                            <div class="gallery-preview">
-                                <svg width="50" height="50" viewBox="0 0 24 24"><path fill="none" stroke="#38bdf8" stroke-width="1.5" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                            </div>
-                            <div class="gallery-title">Geometric Star</div>
-                        </div>
-                        <div class="gallery-item" onclick="loadVector('grid')">
-                            <div class="gallery-preview">
-                                <svg width="50" height="50" viewBox="0 0 24 24"><path fill="none" stroke="#38bdf8" stroke-width="1.5" d="M3 3h18v18H3V3zm6 0v18M15 3v18M3 9h18M3 15h18"/></svg>
-                            </div>
-                            <div class="gallery-title">Calibration Grid</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- CONSOLE TERMINAL FOOTER -->
-        <div class="bottom-row" id="terminal-console">
-            [SYSTEM]: Device interface initializing...
-        </div>
-    </div>
-
-    <script>
-        // --- REAL HARDWARE BRIDGE CONFIGURATION ---
-        const ESP32_IP = "192.168.4.1"; // <-- Adjust to match your ESP32 target IP address
-        let socket;
-        let isConnected = false;
-
-        // Static Vector Paths Database
-        const vectors = {
-            nicholashaus: "60,170 240,170 240,70 60,70 60,170 240,70 150,10 60,70 240,170",
-            star: "120,20 150,82 220,92 170,141 181,210 120,177 59,210 70,141 20,92 89,82 120,20",
-            grid: "10,10 290,10 290,190 10,190 10,10 10,70 290,70 290,130 10,130 10,190 100,190 100,10 190,10 190,190"
-        };
-
-        // Initialize Web Interface Socket connection
-        function initWebSocket() {
-            logToTerminal(`[SYSTEM]: Linking stream to ws://${ESP32_IP}/ws...`);
-            socket = new WebSocket(`ws://${ESP32_IP}/ws`);
-
-            socket.onopen = () => {
-                isConnected = true;
-                updateStatusBadge(true);
-                logToTerminal("<span class='success-highlight'>[ESP32]: WebSocket Connection Established successfully!</span>");
-            };
-
-            socket.onclose = () => {
-                isConnected = true; // Kept true for development UI testing fallback, set to false for strict production lock
-                updateStatusBadge(false);
-                logToTerminal("<span class='alert-highlight'>[ESP32]: Wire lost connection. Retrying link in 5s...</span>");
-                setTimeout(initWebSocket, 5000); 
-            };
-
-            socket.onerror = (error) => {
-                logToTerminal("<span class='alert-highlight'>[ERROR]: Internal Web Handshake failed. Validate hardware IP mapping.</span>");
-            };
-        }
-
-        function updateStatusBadge(connected) {
-            const badge = document.getElementById('espBadge');
-            const dot = document.getElementById('espDot');
-            const text = document.getElementById('espText');
-            
-            if(connected) {
-                badge.style.color = 'var(--success)';
-                dot.style.backgroundColor = 'var(--success)';
-                dot.style.boxShadow = '0 0 8px var(--success)';
-                text.innerText = 'CONNECTED';
-            } else {
-                badge.style.color = 'var(--danger)';
-                dot.style.backgroundColor = 'var(--danger)';
-                dot.style.boxShadow = '0 0 8px var(--danger)';
-                text.innerText = 'OFFLINE';
-            }
-        }
-
-        function switchTab(element, tabName) {
-            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
-            element.classList.add('active');
-            document.getElementById(`tab-${tabName}`).classList.add('active');
-            
-            logToTerminal(`[UI]: Transferred focus to module pane: "${tabName.toUpperCase()}"`);
-        }
-
-        function logToTerminal(message) {
-            const consoleElem = document.getElementById('terminal-console');
-            consoleElem.innerHTML += `<br>${message}`;
-            consoleElem.scrollTop = consoleElem.scrollHeight;
-        }
-
-        function executeNicholasHaus() {
-            if (!isConnected) {
-                logToTerminal("<span class='alert-highlight'>[ERROR]: Command aborted. Target hardware link is down.</span>");
-                return;
-            }
-            
-            // 1. Instantly trigger native trace path visualizer engine preview
-            document.getElementById('vector-path').setAttribute('points', vectors.nicholashaus);
-            document.getElementById('pen-tip').setAttribute('cx', '240');
-            document.getElementById('pen-tip').setAttribute('cy', '170');
-            
-            // 2. Map coordinates configuration pack
-            const payload = {
-                task: "draw_nikolaushaus",
-                points: [
-                    {x: 60, y: 170}, {x: 240, y: 170}, {x: 240, y: 70}, 
-                    {x: 60, y: 70},  {x: 60, y: 170},  {x: 240, y: 70}, 
-                    {x: 150, y: 10}, {x: 60, y: 70},   {x: 240, y: 170}
-                ]
-            };
-
-            // 3. Send structured string payload frame to ESP backend
-            socket.send(JSON.stringify(payload));
-            
-            logToTerminal(`[PROJECT TASK]: <span class='status-highlight'>Executing Main Task: Nicholas Haus matrix stream dispatched.</span>`);
-        }
-
-        function sendDrive(direction) {
-            if (!isConnected) {
-                logToTerminal("<span class='alert-highlight'>[ERROR]: Frame transmission dropped. ESP32 is offline.</span>");
-                return;
-            }
-            if (direction === 'HOME') {
-                socket.send("G28");
-                logToTerminal("[HARDWARE]: Dispatched Home Execution Order (G28)");
-            } else {
-                socket.send(`JOG_${direction}`);
-                logToTerminal(`[DRIVE]: Manual pulse steps forward token axis: ${direction}`);
-            }
-        }
-
-        function updateSpeed(value) {
-            document.getElementById('speed-display').innerText = value + '%';
-            if (!isConnected) return;
-            socket.send(`SPEED_${value}`);
-            logToTerminal(`[PARAMETER]: Feed rate scaler adjusted modifier payload to: ${value}%`);
-        }
-
-        function saveSettings() {
-            const x = document.getElementById('stepsX').value;
-            const y = document.getElementById('stepsY').value;
-            const acc = document.getElementById('accel').value;
-            
-            logToTerminal(`[EEPROM]: Transmitting hardware structures variables down...`);
-            if (isConnected) {
-                socket.send(`CONFIG_X:${x}_Y:${y}_ACCEL:${acc}`);
-            }
-            logToTerminal(`<span class='success-highlight'>[SYSTEM]: NVRAM profile payload updated locally.</span>`);
-        }
-
-        function loadVector(key) {
-            const pathData = vectors[key];
-            document.getElementById('vector-path').setAttribute('points', pathData);
-            
-            if (key === 'star') { document.getElementById('pen-tip').setAttribute('cx', '120'); document.getElementById('pen-tip').setAttribute('cy', '20'); }
-            if (key === 'grid') { document.getElementById('pen-tip').setAttribute('cx', '190'); document.getElementById('pen-tip').setAttribute('cy', '190'); }
-            
-            if (isConnected) {
-                socket.send(`LOAD_TEMPLATE_${key.toUpperCase()}`);
-            }
-            logToTerminal(`[PARSER]: Active layout switch template updated to: "${key.toUpperCase()}"`);
-        }
-
-        function triggerEmergencyStop() {
-            logToTerminal("<span class='alert-highlight'>[CRITICAL]: !!! EMERGENCY STOP COMMAND DISPATCHED !!!</span>");
-            
-            if (isConnected) {
-                socket.send("M0"); // Standard emergency hardware halt command string
-            }
-            
-            isConnected = false;
-            updateStatusBadge(false);
-            document.getElementById('espText').innerText = 'HALTED';
-            logToTerminal("<span class='alert-highlight'>[ESP32]: Stepper power relays tripped. Hardware bus frozen.</span>");
-        }
-
-        // Auto-run connection system when HTML parsing yields execution loop
-        window.onload = initWebSocket;
-    </script>
-</body>
-</html>
+#include <WiFi.h>
+#include <WebServer.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SH110X.h>
+#include <ESP32Servo.h>
+
+/* ----------------------- WI-FI CREDENTIALS ------------------------------- */
+const char* WIFI_SSID = "YOUR_HOTSPOT_NAME";   // <-- EDIT ME (or just use the fallback)
+const char* WIFI_PASS = "YOUR_HOTSPOT_PASS";   // <-- EDIT ME
+#define WIFI_TIMEOUT_MS 20000
+const char* AP_SSID = "MERO_Plotter";          // fallback network if join fails
+const char* AP_PASS = "plotter123";
+String deviceIP = "";
+
+/* ----------------------------- PIN MAP ----------------------------------- */
+#define AIN1 26
+#define AIN2 27
+#define BIN1 25
+#define BIN2 33
+#define DRV_SLP 32
+#define ENC_X 34
+#define ENC_Y 35
+#define LIM_X_MAX 16
+#define LIM_X_MIN 17
+#define LIM_Y_MAX 18
+#define LIM_Y_MIN 19
+#define HALL_DO 23
+#define SERVO_Z 13
+#define ESTOP_BTN 4
+#define OLED_SDA 14
+#define OLED_SCL 15
+#define OLED_ADDR 0x3C
+#define OLED_W 128
+#define OLED_H 64
+
+/* ------------------------- LOGIC LEVELS ---------------------------------- */
+#define SW_PRESSED    LOW
+#define HALL_ACTIVE   HIGH    // your sensor reads HIGH when a magnet is present
+#define ESTOP_PRESSED LOW
+
+/* -------------------- MECHANICS / CALIBRATION ---------------------------- */
+#define ENC_SLOTS         20        // slots on YOUR encoder disc
+#define EDGES_PER_SLOT    2         // 2 = count both edges (CHANGE), 1 = one edge (RISING)
+#define GEAR_RATIO        48.0
+#define ENCODER_ON_MOTOR  0         // 0 = encoder on the OUTPUT/pulley shaft (your case)
+#define PULLEY_TEETH      16
+#define BELT_PITCH_MM     2.0
+#define MM_PER_REV        (PULLEY_TEETH * BELT_PITCH_MM)
+#define COUNTS_PER_ENC_REV (ENC_SLOTS * EDGES_PER_SLOT)
+#if ENCODER_ON_MOTOR
+  #define COUNTS_PER_OUT_REV (COUNTS_PER_ENC_REV * GEAR_RATIO)
+#else
+  #define COUNTS_PER_OUT_REV (COUNTS_PER_ENC_REV)
+#endif
+#define COUNTS_PER_MM 1.25f
+
+#define INVERT_X 0      // set to 1 if X drives the wrong way
+#define INVERT_Y 0      // set to 1 if Y drives the wrong way
+
+/* ----------------------------- MOTION (PWM) ------------------------------ */
+#define PWM_FREQ   20000
+#define PWM_RES    8
+#define PWM_MAX    255
+#define MIN_DUTY   190     // floor PWM: on a diagonal the slower axis must still turn (roof B-C/C-D)
+#define DRAW_DUTY  200     // PWM used while drawing (>= HOME_DUTY so segments actually move)
+#define HOME_DUTY  190     // PWM used while homing (higher to break stiction)
+
+#define HOME_TIMEOUT_MS 20000     // max time per homing move (raise if travel is long)
+#define HALL_SEARCH_MM  8.0
+#define BACKOFF_MM      3.0
+
+/* --------------------------- GEOMETRY ------------------------------------ */
+#define HOUSE_SIDE_MM 25.0        // square side (strict)
+#define ROOF_SLANT_MM 20.0        // length of each roof line B-C and C-D
+#define DRAW_ORIGIN_X 50.0        // offset of the house from home (tune to gantry)
+#define DRAW_ORIGIN_Y 50.0
+#define PEN_UP_ANGLE   40
+#define PEN_DOWN_ANGLE 90
+
+/* ----------------------------- OBJECTS ----------------------------------- */
+WebServer        server(80);
+Adafruit_SH1106G oled(OLED_W, OLED_H, &Wire, -1);
+Servo            penServo;
+
+/* ------------------------------ STATE ------------------------------------ */
+enum State { S_OFF, S_STANDBY, S_HOMING, S_OPERATING, S_EMERGENCY };
+volatile State state = S_STANDBY;
+
+volatile long posX = 0, posY = 0;     // encoder counts from home
+volatile int  dirX = 1, dirY = 1;     // sign applied to counts (commanded dir)
+
+bool homed = false, startRequested = false, homeRequested = false, resetRequested = false;
+volatile bool limitHit = false;          // set if a MAX switch is hit while drawing
+char oledMsg[48] = "system is ready";    // the one line currently shown on the OLED
+bool penIsDown = false;                  // true = pen down, false = pen up (for the OLED)
+unsigned long lastOledMs = 0;
+
+/* ------------------------------ ISRs ------------------------------------- */
+void IRAM_ATTR isrX() { posX += dirX; }
+void IRAM_ATTR isrY() { posY += dirY; }
+
+/* ------------------------- UNIT CONVERSION ------------------------------- */
+inline float countsToMm(long c)  { return c / COUNTS_PER_MM; }
+inline long  mmToCounts(float m) { return lround(m * COUNTS_PER_MM); }
+
+/* ------------------------- MOTOR DRIVE (PWM) ----------------------------- */
+void driveX(int duty) {
+  int sgn = (duty >= 0) ? +1 : -1;
+  dirX = sgn;
+  int d = constrain(abs(duty), 0, PWM_MAX);
+  bool phase = (sgn > 0) ^ (INVERT_X == 1);
+  ledcWrite(AIN1, phase ? d : 0);
+  ledcWrite(AIN2, phase ? 0 : d);
+}
+void driveY(int duty) {
+  int sgn = (duty >= 0) ? +1 : -1;
+  dirY = sgn;
+  int d = constrain(abs(duty), 0, PWM_MAX);
+  bool phase = (sgn > 0) ^ (INVERT_Y == 1);
+  ledcWrite(BIN1, phase ? d : 0);
+  ledcWrite(BIN2, phase ? 0 : d);
+}
+void brakeX()  { ledcWrite(AIN1, PWM_MAX); ledcWrite(AIN2, PWM_MAX); }
+void brakeY()  { ledcWrite(BIN1, PWM_MAX); ledcWrite(BIN2, PWM_MAX); }
+void coastX()  { ledcWrite(AIN1, 0); ledcWrite(AIN2, 0); }
+void coastY()  { ledcWrite(BIN1, 0); ledcWrite(BIN2, 0); }
+void brakeMotors() { brakeX(); brakeY(); }
+void coastMotors() { coastX(); coastY(); }
+void stopMotors() {
+  brakeMotors();
+  delay(60);
+  coastMotors();
+}
+
+/* ----------------------------- SENSORS ----------------------------------- */
+inline bool swPressed(int pin) { return digitalRead(pin) == SW_PRESSED; }
+inline bool hallActive()       { return digitalRead(HALL_DO) == HALL_ACTIVE; }
+inline bool estopPressed()     { return digitalRead(ESTOP_BTN) == ESTOP_PRESSED; }
+
+/* ------------------------------- PEN ------------------------------------- */
+void penUp()   { penServo.write(PEN_UP_ANGLE);   delay(250); penIsDown = false; }
+void penDown() { penServo.write(PEN_DOWN_ANGLE); delay(250); penIsDown = true;  }
+
+/* ----------------------------- OLED -------------------------------------- */
+const char* stateName() {
+  switch (state) {
+    case S_OFF:       return "OFF";
+    case S_STANDBY:   return "STANDBY";
+    case S_HOMING:    return "HOMING";
+    case S_OPERATING: return "DRAWING";
+    case S_EMERGENCY: return "EMERGENCY";
+  }
+  return "?";
+}
+void updateOLED() {
+  oled.clearDisplay();
+  oled.setTextColor(SH110X_WHITE);
+  oled.setTextSize(1);
+  oled.setCursor(0, 0);
+  oled.print(F("IP:"));
+  oled.print(deviceIP);
+  oled.setCursor(0, 54);
+  oled.print(penIsDown ? F("Pen is down") : F("Pen is up"));
+  int top = 16, bot = 52;
+  int len   = (int)strlen(oledMsg);
+  int lines = (len + 20) / 21;            
+  if (lines < 1) lines = 1;
+  int y = top + ((bot - top) - lines * 10) / 2;
+  if (y < top) y = top;
+  oled.setCursor(0, y);
+  oled.print(oledMsg);
+  oled.display();
+}
+
+void setOled(const char* m) {
+  strncpy(oledMsg, m, sizeof(oledMsg) - 1);
+  oledMsg[sizeof(oledMsg) - 1] = '\0';
+  updateOLED();
+}
+
+/* --------------------------- EMERGENCY ----------------------------------- */
+void triggerEmergency() {
+  state = S_EMERGENCY;
+  stopMotors();
+  digitalWrite(DRV_SLP, LOW);     
+  penServo.write(PEN_UP_ANGLE);
+  penIsDown = false;
+  updateOLED();
+}
+
+void serviceBackground() {
+  server.handleClient();
+  if (estopPressed() && state != S_EMERGENCY) triggerEmergency();
+  unsigned long now = millis();
+  if (now - lastOledMs > 150) { lastOledMs = now; updateOLED(); }
+  yield();
+}
+
+void holdFor(unsigned long ms) {
+  coastMotors();
+  unsigned long t0 = millis();
+  while (millis() - t0 < ms) {
+    if (state == S_EMERGENCY) return;
+    serviceBackground();
+    delay(5);
+  }
+}
+
+void backoffFromMax(char axis) {
+  stopMotors();
+  Serial.print("  "); Serial.print(axis);
+  Serial.println("-MAX hit while drawing -> backing off 20 mm and stopping");
+  long start  = (axis == 'X') ? posX : posY;
+  long needCnt = mmToCounts(20.0);                 
+  unsigned long t0 = millis();
+  while (labs(((axis == 'X') ? posX : posY) - start) < needCnt && millis() - t0 < 6000) {
+    if (state == S_EMERGENCY) break;
+    if (axis == 'X') driveX(-DRAW_DUTY); else driveY(-DRAW_DUTY);  
+    serviceBackground();
+    delay(2);
+  }
+  stopMotors();
+  limitHit = true;                                 
+}
+
+bool moveTo(float xmm, float ymm) {
+  if (state == S_EMERGENCY || limitHit) return false;
+  long tx = mmToCounts(xmm), ty = mmToCounts(ymm);
+  long sx = posX, sy = posY;
+  long dcx = tx - sx, dcy = ty - sy;
+  int  sgx = (dcx >= 0) ? +1 : -1;
+  int  sgy = (dcy >= 0) ? +1 : -1;
+  long adx = labs(dcx), ady = labs(dcy);
+  long amax = (adx > ady) ? adx : ady;
+  if (amax == 0) return true;
+
+  unsigned long t0 = millis();
+  unsigned long timeout = 2500 + (unsigned long)((amax / COUNTS_PER_MM) * 300.0);
+  bool xDone = (adx == 0), yDone = (ady == 0);
+
+  while (!(xDone && yDone)) {
+    if (state == S_EMERGENCY) { coastMotors(); return false; }
+    if (swPressed(LIM_X_MAX)) { backoffFromMax('X'); return false; }
+    if (swPressed(LIM_Y_MAX)) { backoffFromMax('Y'); return false; }
+    if (millis() - t0 > timeout) break;            
+
+    long doneX = labs(posX - sx);
+    long doneY = labs(posY - sy);
+    float fx = (adx > 0) ? (float)doneX / (float)adx : 1.0f;  
+    float fy = (ady > 0) ? (float)doneY / (float)ady : 1.0f;
+
+    if (!xDone) {
+      if (doneX >= adx)        { brakeX(); xDone = true; }     
+      else if (fx <= fy)         driveX(sgx * DRAW_DUTY);      
+      else                       coastX();                     
+    }
+    if (!yDone) {
+      if (doneY >= ady)        { brakeY(); yDone = true; }
+      else if (fy <= fx)         driveY(sgy * DRAW_DUTY);
+      else                       coastY();
+    }
+    serviceBackground();
+    delay(2);
+  }
+  stopMotors();        
+  return true;
+}
+
+/* ----------------------------- HOMING ------------------------------------ */
+void jogToSwitch(char axis, int duty, int swpin, unsigned long timeoutMs) {
+  unsigned long t0 = millis();
+  while (!swPressed(swpin)) {
+    if (state == S_EMERGENCY) break;
+    if (millis() - t0 > timeoutMs) break;          
+    if (axis == 'X') driveX(duty); else driveY(duty);
+    serviceBackground();
+    delay(2);
+  }
+  if (axis == 'X') driveX(0); else driveY(0);
+}
+
+void homeMachine() {
+  if (state == S_EMERGENCY) return;
+  state = S_HOMING; updateOLED();
+  Serial.println("Homing...");
+  penServo.write(PEN_UP_ANGLE);
+  penIsDown = false;
+  delay(400);                    
+
+  Serial.print("  sensors @ start:  Ymin="); Serial.print(swPressed(LIM_Y_MIN));
+  Serial.print("  Xmin=");                    Serial.print(swPressed(LIM_X_MIN));
+  Serial.print("  hall=");                     Serial.println(hallActive());
+
+  unsigned long ty0 = millis();
+  while (!swPressed(LIM_Y_MIN)) {
+    if (state == S_EMERGENCY) break;
+    if (millis() - ty0 > HOME_TIMEOUT_MS) { Serial.println("  Y: TIMEOUT (switch never reached)"); break; }
+    driveY(-HOME_DUTY);
+    serviceBackground();
+    delay(2);
+  }
+  driveY(0);
+  if (swPressed(LIM_Y_MIN)) Serial.println("  Y: reached Y-min switch");
+  delay(250);
+
+  unsigned long t0 = millis();
+  bool found = false;
+  while (millis() - t0 < HOME_TIMEOUT_MS) {
+    if (state == S_EMERGENCY) break;
+    if (hallActive())         { found = true; Serial.println("  X: hall magnet detected -> home"); break; }
+    if (swPressed(LIM_X_MIN)) { found = true; Serial.println("  X: X-min switch hit -> home");     break; }
+    driveX(-HOME_DUTY);
+    serviceBackground();
+    delay(2);
+  }
+  driveX(0);
+  if (!found) Serial.println("  X: TIMEOUT (no hall, no X-min reached)");
+
+  noInterrupts(); posX = 0; posY = 0; interrupts();
+  homed = true;
+  Serial.println("Homing done. Origin set to (0,0).");
+  state = S_STANDBY; setOled("Homed");
+}
+
+/* ------------------------ NIKOLAUS HOUSE --------------------------------- */
+void drawNikolausHouse() {
+  const float Ax = 50.0,  Ay = 50.0;     
+  const float Bx = 50.0,  By = 75.0;     
+  const float Cx = 62.5,  Cy = 90.0;     
+  const float Dx = 75.0,  Dy = 75.0;     
+  const float Ex = 75.0,  Ey = 50.0;     
+
+  penUp();
+  moveTo(Ax, Ay);  holdFor(2000);        
+  penDown();       holdFor(2000);        
+  moveTo(Bx, By);  holdFor(2000);        
+  moveTo(Cx, Cy);  holdFor(2000);        
+  moveTo(Dx, Dy);  holdFor(2000);        
+  moveTo(Bx, By);  holdFor(2000);        
+  moveTo(Ex, Ey);  holdFor(2000);        
+  moveTo(Ax, Ay);  holdFor(2000);        
+  moveTo(Dx, Dy);  holdFor(2000);        
+  moveTo(Ex, Ey);  holdFor(2000);        
+  penUp();                               
+  setOled("Nikolas house drawing done"); 
+
+  if (!limitHit) {
+    Serial.println("Drawing done. Returning home (re-homing to switches)...");
+    setOled("Homing");                   
+    homeMachine();                       
+
+    Serial.println("Parking 20 mm off home on X and Y...");
+    moveTo(20.0, 20.0);                  
+    setOled("Nikolas house drawing complete");
+  } else {
+    Serial.println("Drawing stopped by a MAX limit - staying put.");
+    setOled("Drawing stopped - limit hit");
+  }
+}
+
+void runRoutine() {
+  if (state == S_EMERGENCY) return;
+  limitHit = false;                          
+  if (!homed) { setOled("Homing is going on"); homeMachine(); }
+  if (state == S_EMERGENCY) return;
+  state = S_OPERATING; setOled("Drawing nikolas house");
+  Serial.println("Drawing Nikolaus house...");
+  drawNikolausHouse();
+  if (limitHit) Serial.println("Run ended early: MAX limit was hit.");
+  else          Serial.println("Done. Returned home.");
+  if (state != S_EMERGENCY) { state = S_STANDBY; updateOLED(); }
+}
+
+/* ----------------------------- WEB UI ------------------------------------ */
+const char PAGE[] PROGMEM = R"HTML(
+<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MERO Plotter Dashboard</title>
+<style>
+ :root { --bg: #0f111a; --card: #161925; --text: #f0f2f5; --accent: #2979ff; --stop: #ff1744; --go: #00e676; --home: #ff9100; }
+ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);margin:0;padding:20px;display:flex;flex-direction:column;align-items:center;}
+ .container{width:100%;max-width:480px;}
+ h1{font-weight:600;margin:10px 0 5px 0;text-align:center;letter-spacing:0.5px;}
+ .subtitle{text-align:center;color:#8a99ad;margin-bottom:25px;font-size:14px;}
+ .telemetry-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+ .card{background:var(--card);padding:15px;border-radius:14px;box-shadow:0 4px 12px rgba(0,0,0,0.2);border:1px solid #24293e;}
+ .card-label{font-size:11px;text-transform:uppercase;color:#8a99ad;letter-spacing:0.5px;margin-bottom:4px;}
+ .card-value{font-size:20px;font-weight:bold;color:#fff;}
+ .status-banner{grid-column: span 2; display:flex; justify-content:space-between; align-items:center;}
+ .badge{padding:4px 10px; border-radius:8px; font-size:12px; font-weight:bold; text-transform:uppercase;}
+ .btn{display:block;width:100%;box-sizing:border-box;margin:12px 0;padding:16px;font-size:16px;font-weight:600;border:0;border-radius:12px;color:#fff;cursor:pointer;transition:transform 0.1s,filter 0.2s;}
+ .btn:active{transform:scale(0.98);}
+ .go{background:var(--go);color:#052e16}.home{background:var(--home);color:#451a03}.stop{background:var(--stop);font-size:18px;letter-spacing:1px;box-shadow:0 0 15px rgba(255,23,68,0.4);}
+ .reset{background:#374151}
+ #console{text-align:center;font-family:monospace;color:var(--accent);margin-top:15px;font-size:14px;font-weight:500;}
+</style></head><body>
+ <div class="container">
+  <h1>MERO Pen Plotter</h1>
+  <div class="subtitle">System Controller & Live Telemetry</div>
+  <div class="telemetry-grid">
+   <div class="card status-banner">
+    <div><div class="card-label">Machine State</div><div id="state" class="card-value">-</div></div>
+    <span id="state-badge" class="badge" style="background:#555;">INIT</span>
+   </div>
+   <div class="card"><div class="card-label">X Position</div><div id="posX" class="card-value">0.00 mm</div></div>
+   <div class="card"><div class="card-label">Y Position</div><div id="posY" class="card-value">0.00 mm</div></div>
+   <div class="card"><div class="card-label">Pen Status</div><div id="pen" class="card-value">-</div></div>
+   <div class="card"><div class="card-label">Controller IP</div><div id="ip" class="card-value" style="font-size:14px;padding-top:6px;">-</div></div>
+  </div>
+  <button class="btn go" onclick="cmd('/start')">START DRAW ROUTINE</button>
+  <button class="btn home" onclick="cmd('/home')">EXECUTE MACHINE HOMING</button>
+  <button class="btn reset" onclick="cmd('/reset')">RESET SYSTEM</button>
+  <button class="btn stop" onclick="cmd('/estop')">EMERGENCY STOP</button>
+  <div id="console">System linked</div>
+ </div>
+<script>
+ function cmd(u){
+  fetch(u).then(r=>r.text()).then(t=>{document.getElementById('console').innerText=t;});
+ }
+ function updateTelemetry(){
+  fetch('/status').then(r=>r.json()).then(j=>{
+   document.getElementById('state').innerText = j.state;
+   document.getElementById('posX').innerText = j.x.toFixed(2) + " mm";
+   document.getElementById('posY').innerText = j.y.toFixed(2) + " mm";
+   document.getElementById('pen').innerText = j.pen;
+   document.getElementById('ip').innerText = j.ip;
+   
+   let badge = document.getElementById('state-badge');
+   badge.innerText = j.state;
+   if(j.state==="EMERGENCY"){ badge.style.backgroundColor="#ff1744"; badge.style.color="#fff"; }
+   else if(j.state==="DRAWING"){ badge.style.backgroundColor="#00e676"; badge.style.color="#052e16"; }
+   else if(j.state==="HOMING"){ badge.style.backgroundColor="#ff9100"; badge.style.color="#451a03"; }
+   else { badge.style.backgroundColor="#2979ff"; badge.style.color="#fff"; }
+  }).catch(()=>{});
+ }
+ setInterval(updateTelemetry, 400);
+ updateTelemetry();
+</script></body></html>
+)HTML";
+
+void handleRoot()  { server.send_P(200, "text/html", PAGE); }
+void handleStart() {
+  if (state == S_EMERGENCY) { server.send(200, "text/plain", "Blocked: EMERGENCY"); return; }
+  startRequested = true; server.send(200, "text/plain", "Routine queued");
+}
+void handleHome() {
+  if (state == S_EMERGENCY) { server.send(200, "text/plain", "Blocked: EMERGENCY"); return; }
+  homeRequested = true; server.send(200, "text/plain", "Homing queued");
+}
+void handleEstop() { triggerEmergency(); server.send(200, "text/plain", "EMERGENCY STOP"); }
+void handleReset() { resetRequested = true; server.send(200, "text/plain", "Reset queued"); }
+
+// New endpoint: provides system fields parsed cleanly into JSON structure
+void handleStatus() {
+  String json = "{";
+  json += "\"state\":\"" + String(stateName()) + "\",";
+  json += "\"x\":" + String(countsToMm(posX)) + ",";
+  json += "\"y\":" + String(countsToMm(posY)) + ",";
+  json += "\"pen\":\"" + String(penIsDown ? "DOWN" : "UP") + "\",";
+  json += "\"ip\":\"" + deviceIP + "\"";
+  json += "}";
+  server.send(200, "application/json", json);
+}
+
+/* --------------------------- WI-FI BRINGUP ------------------------------- */
+void connectWiFi() {
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  Serial.print("Connecting to WiFi: "); Serial.println(WIFI_SSID);
+  unsigned long t0 = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() - t0 < WIFI_TIMEOUT_MS) {
+    delay(500); Serial.print(".");
+  }
+  if (WiFi.status() == WL_CONNECTED) {
+    deviceIP = WiFi.localIP().toString();
+    Serial.println("\nWiFi connected!  http://" + deviceIP);
+  } else {
+    Serial.println("\nCould not join your WiFi - starting fallback access point.");
+    WiFi.mode(WIFI_AP);
+    WiFi.softAP(AP_SSID, AP_PASS);
+    deviceIP = WiFi.softAPIP().toString();
+    Serial.print("Join WiFi '"); Serial.print(AP_SSID);
+    Serial.print("' (pass "); Serial.print(AP_PASS); Serial.println(") then open:");
+    Serial.println("http://" + deviceIP);
+  }
+}
+
+/* ------------------------------ SETUP ------------------------------------ */
+void setup() {
+  Serial.begin(115200);
+  delay(300);
+  Serial.println("\n=== MERO Pen Plotter (fine-tuned, SH1106) ===");
+
+  pinMode(DRV_SLP, OUTPUT); digitalWrite(DRV_SLP, HIGH);
+  ledcAttach(AIN1, PWM_FREQ, PWM_RES);
+  ledcAttach(AIN2, PWM_FREQ, PWM_RES);
+  ledcAttach(BIN1, PWM_FREQ, PWM_RES);
+  ledcAttach(BIN2, PWM_FREQ, PWM_RES);
+  stopMotors();
+
+  pinMode(ENC_X, INPUT); pinMode(ENC_Y, INPUT);
+  attachInterrupt(digitalPinToInterrupt(ENC_X), isrX, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(ENC_Y), isrY, CHANGE);
+
+  pinMode(LIM_X_MAX, INPUT_PULLUP); pinMode(LIM_X_MIN, INPUT_PULLUP);
+  pinMode(LIM_Y_MAX, INPUT_PULLUP); pinMode(LIM_Y_MIN, INPUT_PULLUP);
+  pinMode(HALL_DO, INPUT_PULLUP);   pinMode(ESTOP_BTN, INPUT_PULLUP);
+
+  ESP32PWM::allocateTimer(3);
+  penServo.setPeriodHertz(50);
+  penServo.attach(SERVO_Z, 500, 2400);
+  penUp();
+
+  Wire.begin(OLED_SDA, OLED_SCL);
+  oled.begin(OLED_ADDR, true);
+  oled.clearDisplay(); oled.display();
+  setOled("system is ready");
+
+  connectWiFi();
+
+  server.on("/",      handleRoot);
+  server.on("/start", handleStart);
+  server.on("/home",  handleHome);
+  server.on("/estop", handleEstop);
+  server.on("/reset", handleReset);
+  server.on("/status", handleStatus); // Hook up data extraction path here
+  server.begin();
+  Serial.println("Web server started. Press START on the page to draw.");
+
+  state = S_STANDBY; updateOLED();
+  homeRequested = true;  
+}
+
+/* ------------------------------- LOOP ------------------------------------ */
+void printManualHelp() {
+  Serial.println(F("\n--- MANUAL COMMANDS (type in Serial, Newline ending) ---"));
+  Serial.println(F("  H        home the machine"));
+  Serial.println(F("  D        draw the Nikolaus house"));
+  Serial.println(F("  U        pen up"));
+  Serial.println(F("  P        pen down"));
+  Serial.println(F("  G x y    go to X Y in mm   (e.g.  G 62.5 90)"));
+  Serial.println(F("  S        emergency stop"));
+  Serial.println(F("  R        reset after emergency"));
+  Serial.println(F("  ?        show this list"));
+  Serial.println(F("-------------------------------------------------------"));
+}
+
+void handleSerialCommands() {
+  if (!Serial.available()) return;
+  String cmd = Serial.readStringUntil('\n');
+  cmd.trim();
+  if (cmd.length() == 0) return;
+
+  char c = cmd.charAt(0);
+  if (c >= 'a' && c <= 'z') c -= 32;            
+
+  switch (c) {
+    case 'H':
+      Serial.println(F("[manual] home requested"));
+      homeRequested = true;                     
+      break;
+    case 'D':
+      Serial.println(F("[manual] draw Nikolaus house requested"));
+      startRequested = true;                    
+      break;
+    case 'U':
+      Serial.println(F("[manual] pen up"));
+      penUp();
+      break;
+    case 'P':
+      Serial.println(F("[manual] pen down"));
+      penDown();
+      break;
+    case 'G': {                                 
+      int sp1 = cmd.indexOf(' ');
+      int sp2 = (sp1 >= 0) ? cmd.indexOf(' ', sp1 + 1) : -1;
+      if (sp1 > 0 && sp2 > sp1) {
+        float gx = cmd.substring(sp1 + 1, sp2).toFloat();
+        float gy = cmd.substring(sp2 + 1).toFloat();
+        Serial.print(F("[manual] go to X=")); Serial.print(gx);
+        Serial.print(F(" Y="));               Serial.println(gy);
+        if (!homed) Serial.println(F("  (note: not homed yet -- coords are from current 0,0)"));
+        if (state == S_EMERGENCY || limitHit) {
+          Serial.println(F("  blocked: emergency/limit active -- send R to reset"));
+        } else {
+          setOled("Manual move");
+          moveTo(gx, gy);
+          setOled("Manual move done");
+        }
+      } else {
+        Serial.println(F("  usage:  G x y      e.g.  G 62.5 90"));
+      }
+      break;
+    }
+    case 'S':
+      Serial.println(F("[manual] EMERGENCY STOP"));
+      triggerEmergency();
+      break;
+    case 'R':
+      Serial.println(F("[manual] reset"));
+      resetRequested = true;                    
+      break;
+    case '?':
+      printManualHelp();
+      break;
+    default:
+      Serial.print(F("[manual] unknown command: ")); Serial.println(cmd);
+      printManualHelp();
+      break;
+  }
+}
+
+void loop() {
+  serviceBackground();           
+  handleSerialCommands();        
+
+  if (resetRequested) {
+    resetRequested = false;
+    digitalWrite(DRV_SLP, HIGH); 
+    homed = false; state = S_STANDBY; setOled("system is ready");
+  }
+  if (homeRequested  && state != S_EMERGENCY) { homeRequested  = false; setOled("Homing is going on"); homeMachine(); }
+  if (startRequested && state != S_EMERGENCY) { startRequested = false; runRoutine(); }
+}
