@@ -176,16 +176,22 @@
             padding-bottom: 8px;
         }
 
-        /* ESP Connection Badge */
+        /* ESP Connection Status and Action Link Grid */
         .esp-status-container {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
+            gap: 8px;
             background-color: rgba(0, 0, 0, 0.2);
-            padding: 10px 12px;
+            padding: 12px;
             border-radius: 4px;
             border: 1px solid var(--panel-border);
             font-size: 0.8rem;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .esp-label {
@@ -210,6 +216,35 @@
             border-radius: 50%;
             box-shadow: 0 0 8px var(--danger);
             transition: background-color 0.3s, box-shadow 0.3s;
+        }
+
+        .connect-btn {
+            width: 100%;
+            padding: 8px;
+            background-color: var(--sidebar-active);
+            color: var(--text-main);
+            border: 1px solid var(--panel-border);
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: background-color 0.1s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .connect-btn:hover {
+            background-color: #1e4680;
+        }
+
+        .connect-btn svg {
+            width: 12px;
+            height: 12px;
+            fill: currentColor;
         }
 
         /* Action Button Styling */
@@ -413,6 +448,15 @@
             border-color: #38bdf8;
         }
 
+        .coordinate-inputs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .coordinate-inputs input {
+            flex: 1;
+        }
+
         .save-btn {
             padding: 14px;
             background-color: var(--sidebar-active);
@@ -604,11 +648,17 @@
                     <div class="panel-header">Machine Interface</div>
                     
                     <div class="esp-status-container">
-                        <span class="esp-label">ESP32 LINK</span>
-                        <div class="esp-badge" id="espBadge">
-                            <div class="status-dot" id="espDot"></div>
-                            <span id="espText">OFFLINE</span>
+                        <div class="status-row">
+                            <span class="esp-label">ESP32 LINK</span>
+                            <div class="esp-badge" id="espBadge">
+                                <div class="status-dot" id="espDot"></div>
+                                <span id="espText">OFFLINE</span>
+                            </div>
                         </div>
+                        <button class="connect-btn" onclick="initWebSocket()">
+                            <svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 9.11 4 10.51 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+                            Connect to Controller
+                        </button>
                     </div>
 
                     <!-- Main Drawing Task -->
@@ -666,6 +716,13 @@
                 <div class="panel settings-panel">
                     <div class="panel-header" style="text-align: left;">Hardware Configuration</div>
                     <div class="settings-grid">
+                        <div class="setting-group">
+                            <label>Home Position Coordinates ($X_0$, $Y_0$)</label>
+                            <div class="coordinate-inputs">
+                                <input type="number" id="homeX" value="0" placeholder="X (mm)">
+                                <input type="number" id="homeY" value="0" placeholder="Y (mm)">
+                            </div>
+                        </div>
                         <div class="setting-group">
                             <label>Steps per mm (X-Axis)</label>
                             <input type="number" id="stepsX" value="80.00">
@@ -732,6 +789,10 @@
         };
 
         function initWebSocket() {
+            // If an active socket exists, close it cleanly first to refresh state
+            if (socket) {
+                socket.close();
+            }
             logToTerminal(`[SYSTEM]: Linking stream to ws://${ESP32_IP}/ws...`);
             socket = new WebSocket(`ws://${ESP32_IP}/ws`);
 
@@ -744,8 +805,7 @@
             socket.onclose = () => {
                 isConnected = false; 
                 updateStatusBadge(false);
-                logToTerminal("<span class='alert-highlight'>[ESP32]: Wire lost connection. Retrying link in 5s...</span>");
-                setTimeout(initWebSocket, 5000); 
+                logToTerminal("<span class='alert-highlight'>[ESP32]: Link dropped. Click 'Connect to Controller' to retry manually.</span>");
             };
 
             socket.onerror = (error) => {
@@ -815,8 +875,15 @@
                 return;
             }
             if (direction === 'HOME') {
-                socket.send("G28");
-                logToTerminal("[HARDWARE]: Dispatched Home Execution Order (G28)");
+                const homeX = document.getElementById('homeX').value || 0;
+                const homeY = document.getElementById('homeY').value || 0;
+                // Transmit explicit homing call containing configured coordinate profiles
+                socket.send(`G28_X${homeX}_Y${homeY}`);
+                logToTerminal(`[HARDWARE]: Homing Order executed targeting baseline offset: X=${homeX}mm, Y=${homeY}mm`);
+                
+                // Visualizer resets tracking node to local reference points
+                document.getElementById('pen-tip').setAttribute('cx', '0');
+                document.getElementById('pen-tip').setAttribute('cy', '0');
             } else {
                 socket.send(`JOG_${direction}`);
                 logToTerminal(`[DRIVE]: Manual pulse steps forward token axis: ${direction}`);
@@ -833,15 +900,17 @@
         }
 
         function saveSettings() {
+            const hX = document.getElementById('homeX').value;
+            const hY = document.getElementById('homeY').value;
             const x = document.getElementById('stepsX').value;
             const y = document.getElementById('stepsY').value;
             const acc = document.getElementById('accel').value;
             
-            logToTerminal(`[EEPROM]: Transmitting hardware structures variables down...`);
+            logToTerminal(`[EEPROM]: Transmitting hardware structured configuration data down...`);
             if (isConnected) {
-                socket.send(`CONFIG_X:${x}_Y:${y}_ACCEL:${acc}`);
+                socket.send(`CONFIG_HOMEX:${hX}_HOMEY:${hY}_X:${x}_Y:${y}_ACCEL:${acc}`);
             }
-            logToTerminal(`<span class='success-highlight'>[SYSTEM]: NVRAM profile payload updated locally.</span>`);
+            logToTerminal(`<span class='success-highlight'>[SYSTEM]: NVRAM profile parameters stored locally.</span>`);
         }
 
         function loadVector(key) {
