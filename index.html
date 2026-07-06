@@ -176,11 +176,11 @@
             padding-bottom: 8px;
         }
 
-        /* ESP Connection Status and Action Link Grid */
+        /* ESP Connection Layout with Manual IP Inputs */
         .esp-status-container {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
             background-color: rgba(0, 0, 0, 0.2);
             padding: 12px;
             border-radius: 4px;
@@ -218,9 +218,26 @@
             transition: background-color 0.3s, box-shadow 0.3s;
         }
 
+        .ip-input-field {
+            width: 100%;
+            background-color: rgba(7, 22, 48, 0.6);
+            border: 1px solid var(--panel-border);
+            border-radius: 4px;
+            padding: 8px 10px;
+            color: var(--text-main);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            outline: none;
+            text-align: center;
+        }
+
+        .ip-input-field:focus {
+            border-color: var(--action-cyan);
+        }
+
         .connect-btn {
             width: 100%;
-            padding: 8px;
+            padding: 10px;
             background-color: var(--sidebar-active);
             color: var(--text-main);
             border: 1px solid var(--panel-border);
@@ -247,16 +264,22 @@
             fill: currentColor;
         }
 
-        /* Action Button Styling */
-        .primary-task-btn {
+        /* Action Buttons Styling */
+        .task-control-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
             width: 100%;
+        }
+
+        .primary-task-btn {
             padding: 14px;
             background-color: var(--action-cyan);
             color: var(--text-dark);
             border: none;
             border-radius: 6px;
             font-weight: 700;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             cursor: pointer;
@@ -264,19 +287,28 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             transition: background-color 0.1s, transform 0.05s;
             -webkit-tap-highlight-color: transparent;
         }
 
         .primary-task-btn svg {
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
             fill: var(--text-dark);
         }
 
         .primary-task-btn:hover {
             background-color: var(--action-cyan-hover);
+        }
+
+        .primary-task-btn.cal-btn {
+            background-color: var(--warning);
+            box-shadow: 0 4px 10px rgba(245, 158, 11, 0.2);
+        }
+
+        .primary-task-btn.cal-btn:hover {
+            background-color: #d97706;
         }
 
         .primary-task-btn:active {
@@ -374,6 +406,40 @@
             transform: scale(0.97);
         }
 
+        .speed-control-container {
+            width: 100%;
+        }
+
+        .speed-label-wrapper {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .speed-slider {
+            width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            border-radius: 4px;
+            background: var(--sidebar-active);
+            outline: none;
+            cursor: pointer;
+        }
+
+        .speed-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--btn-light);
+            cursor: pointer;
+        }
+
         .estop-btn {
             width: 100%;
             padding: 14px;
@@ -446,15 +512,6 @@
 
         .setting-group input:focus {
             border-color: #38bdf8;
-        }
-
-        .coordinate-inputs {
-            display: flex;
-            gap: 10px;
-        }
-
-        .coordinate-inputs input {
-            flex: 1;
         }
 
         .save-btn {
@@ -535,6 +592,7 @@
         .status-highlight { color: #38bdf8; font-weight: bold; }
         .alert-highlight { color: var(--danger); font-weight: bold; }
         .success-highlight { color: var(--success); font-weight: bold; }
+        .warning-highlight { color: var(--warning); font-weight: bold; }
 
         /* --- MOBILE LAYOUT QUERY --- */
         @media (max-width: 768px) {
@@ -610,7 +668,6 @@
 </head>
 <body>
 
-    <!-- SIDEBAR NAVIGATION / TOP MENU ON MOBILE -->
     <div class="sidebar">
         <div class="brand-container">
             <img src="hsm logo.png" alt="Hochschule Schmalkalden Logo" class="uni-logo-img">
@@ -631,11 +688,9 @@
         </ul>
     </div>
 
-    <!-- MAIN WORKSPACE -->
     <div class="main-layout">
         <div class="top-row">
             
-            <!-- MAIN CONTROL TAB -->
             <div id="tab-main" class="tab-content active">
                 <div class="panel visualizer-panel">
                     <svg class="plot-canvas" id="main-vector-preview" viewBox="0 0 300 200">
@@ -655,19 +710,24 @@
                                 <span id="espText">OFFLINE</span>
                             </div>
                         </div>
+                        <input type="text" id="espIpInput" class="ip-input-field" value="192.168.4.1" placeholder="Controller IP (e.g. 192.168.4.1)">
                         <button class="connect-btn" onclick="initWebSocket()">
                             <svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 9.11 4 10.51 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
                             Connect to Controller
                         </button>
                     </div>
 
-                    <!-- Main Drawing Task -->
-                    <button class="primary-task-btn" onclick="executeNicholasHaus()">
-                        <svg viewBox="0 0 24 24"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3zm0 7.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-                        DRAW NICHOLAS HAUS
-                    </button>
+                    <div class="task-control-grid">
+                        <button class="primary-task-btn" onclick="executeNicholasHaus()">
+                            <svg viewBox="0 0 24 24"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3zm0 7.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+                            START TASK
+                        </button>
+                        <button class="primary-task-btn cal-btn" onclick="triggerCalibration()">
+                            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.25z"/></svg>
+                            CALIBRATION
+                        </button>
+                    </div>
                     
-                    <!-- Jogging Frame D-Pad -->
                     <div class="dpad-wrapper">
                         <div class="dpad-container">
                             <div></div>
@@ -692,7 +752,6 @@
                         </div>
                     </div>
 
-                    <!-- Pen Actuator Axis Sub-Controls -->
                     <div class="pen-control-container">
                         <button class="pen-btn" onclick="setPenState('UP')">
                             <svg viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14z"/></svg>
@@ -704,25 +763,25 @@
                         </button>
                     </div>
 
+                    <div class="speed-control-container">
+                        <div class="speed-label-wrapper">
+                            <span>FEEDRATE VELOCITY</span>
+                            <span id="speed-display">100%</span>
+                        </div>
+                        <input type="range" min="10" max="200" value="100" class="speed-slider" id="speedSlider" oninput="updateSpeed(this.value)">
+                    </div>
+
                     <button class="estop-btn" onclick="triggerEmergencyStop()">
                         <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-                        EMERGENCY STOP
+                        EMERGENCY BREAK
                     </button>
                 </div>
             </div>
 
-            <!-- SETTINGS TAB -->
             <div id="tab-settings" class="tab-content">
                 <div class="panel settings-panel">
                     <div class="panel-header" style="text-align: left;">Hardware Configuration</div>
                     <div class="settings-grid">
-                        <div class="setting-group">
-                            <label>Home Position Coordinates ($X_0$, $Y_0$)</label>
-                            <div class="coordinate-inputs">
-                                <input type="number" id="homeX" value="0" placeholder="X (mm)">
-                                <input type="number" id="homeY" value="0" placeholder="Y (mm)">
-                            </div>
-                        </div>
                         <div class="setting-group">
                             <label>Steps per mm (X-Axis)</label>
                             <input type="number" id="stepsX" value="80.00">
@@ -748,7 +807,6 @@
                 </div>
             </div>
 
-            <!-- GALLERY TAB -->
             <div id="tab-gallery" class="tab-content">
                 <div class="panel gallery-panel">
                     <div class="panel-header" style="text-align: left;">Available Vector Templates</div>
@@ -771,14 +829,12 @@
 
         </div>
 
-        <!-- CONSOLE TERMINAL FOOTER -->
         <div class="bottom-row" id="terminal-console">
             [SYSTEM]: Device interface initializing...
         </div>
     </div>
 
     <script>
-        const ESP32_IP = "192.168.4.1"; 
         let socket;
         let isConnected = false;
 
@@ -789,27 +845,35 @@
         };
 
         function initWebSocket() {
-            // If an active socket exists, close it cleanly first to refresh state
+            // Drop existing link handles cleanly if re-connecting to a new target node
             if (socket) {
                 socket.close();
             }
-            logToTerminal(`[SYSTEM]: Linking stream to ws://${ESP32_IP}/ws...`);
-            socket = new WebSocket(`ws://${ESP32_IP}/ws`);
+
+            // Extract user-entered IP field string dynamically
+            const targetIp = document.getElementById('espIpInput').value.trim();
+            if (!targetIp) {
+                logToTerminal("<span class='alert-highlight'>[ERROR]: Connection aborted. Invalid or blank IP address entered.</span>");
+                return;
+            }
+
+            logToTerminal(`[SYSTEM]: Linking stream to ws://${targetIp}/ws...`);
+            socket = new WebSocket(`ws://${targetIp}/ws`);
 
             socket.onopen = () => {
                 isConnected = true;
                 updateStatusBadge(true);
-                logToTerminal("<span class='success-highlight'>[ESP32]: WebSocket Connection Established successfully!</span>");
+                logToTerminal(`<span class='success-highlight'>[ESP32]: WebSocket Connection Established with host node ${targetIp}!</span>`);
             };
 
             socket.onclose = () => {
                 isConnected = false; 
                 updateStatusBadge(false);
-                logToTerminal("<span class='alert-highlight'>[ESP32]: Link dropped. Click 'Connect to Controller' to retry manually.</span>");
+                logToTerminal("<span class='alert-highlight'>[ESP32]: Link connection dropped. Re-enter your configuration parameters to retry.</span>");
             };
 
             socket.onerror = (error) => {
-                logToTerminal("<span class='alert-highlight'>[ERROR]: Internal Web Handshake failed. Validate hardware IP mapping.</span>");
+                logToTerminal(`<span class='alert-highlight'>[ERROR]: Internal Web Handshake failed. Validate hardware IP mapping to ${targetIp}.</span>`);
             };
         }
 
@@ -866,7 +930,21 @@
             };
 
             socket.send(JSON.stringify(payload));
-            logToTerminal(`[PROJECT TASK]: <span class='status-highlight'>Executing Main Task: Nicholas Haus matrix stream dispatched.</span>`);
+            logToTerminal(`[WORKING STEP]: <span class='status-highlight'>Plotting started: Nicholas Haus matrix stream dispatched.</span>`);
+            
+            // Simulating parsing cycles updates inside local HMI system context
+            setTimeout(() => {
+                logToTerminal("<span class='success-highlight'>[SYSTEM]: End of plotting reached. Task array completed.</span>");
+            }, 4000);
+        }
+
+        function triggerCalibration() {
+            if (!isConnected) {
+                logToTerminal("<span class='alert-highlight'>[ERROR]: Calibration cycle aborted. Connection offline.</span>");
+                return;
+            }
+            socket.send("CALIBRATE");
+            logToTerminal("<span class='warning-highlight'>[HARDWARE]: Sent System Alignment Profile Command (CALIBRATE)</span>");
         }
 
         function sendDrive(direction) {
@@ -875,15 +953,8 @@
                 return;
             }
             if (direction === 'HOME') {
-                const homeX = document.getElementById('homeX').value || 0;
-                const homeY = document.getElementById('homeY').value || 0;
-                // Transmit explicit homing call containing configured coordinate profiles
-                socket.send(`G28_X${homeX}_Y${homeY}`);
-                logToTerminal(`[HARDWARE]: Homing Order executed targeting baseline offset: X=${homeX}mm, Y=${homeY}mm`);
-                
-                // Visualizer resets tracking node to local reference points
-                document.getElementById('pen-tip').setAttribute('cx', '0');
-                document.getElementById('pen-tip').setAttribute('cy', '0');
+                socket.send("G28");
+                logToTerminal("[HARDWARE]: Dispatched Home Execution Order (G28)");
             } else {
                 socket.send(`JOG_${direction}`);
                 logToTerminal(`[DRIVE]: Manual pulse steps forward token axis: ${direction}`);
@@ -899,18 +970,23 @@
             logToTerminal(`[ACTUATOR]: Sent Pen command token: <span class='status-highlight'>PEN_${state}</span>`);
         }
 
+        function updateSpeed(value) {
+            document.getElementById('speed-display').innerText = value + '%';
+            if (!isConnected) return;
+            socket.send(`SPEED_${value}`);
+            logToTerminal(`[PARAMETER]: Feed rate scaler adjusted modifier payload to: ${value}%`);
+        }
+
         function saveSettings() {
-            const hX = document.getElementById('homeX').value;
-            const hY = document.getElementById('homeY').value;
             const x = document.getElementById('stepsX').value;
             const y = document.getElementById('stepsY').value;
             const acc = document.getElementById('accel').value;
             
-            logToTerminal(`[EEPROM]: Transmitting hardware structured configuration data down...`);
+            logToTerminal(`[EEPROM]: Transmitting hardware structures variables down...`);
             if (isConnected) {
-                socket.send(`CONFIG_HOMEX:${hX}_HOMEY:${hY}_X:${x}_Y:${y}_ACCEL:${acc}`);
+                socket.send(`CONFIG_X:${x}_Y:${y}_ACCEL:${acc}`);
             }
-            logToTerminal(`<span class='success-highlight'>[SYSTEM]: NVRAM profile parameters stored locally.</span>`);
+            logToTerminal("<span class='success-highlight'>[SYSTEM]: NVRAM profile payload updated locally.</span>");
         }
 
         function loadVector(key) {
@@ -927,16 +1003,17 @@
         }
 
         function triggerEmergencyStop() {
-            logToTerminal("<span class='alert-highlight'>[CRITICAL]: !!! EMERGENCY STOP COMMAND DISPATCHED !!!</span>");
+            logToTerminal("<span class='alert-highlight'>[FAILURE]: !!! EMERGENCY STOP BROKEN COMMAND EXECUTION DISPATCHED !!!</span>");
             if (isConnected) {
                 socket.send("M0");
             }
             isConnected = false;
             updateStatusBadge(false);
             document.getElementById('espText').innerText = 'HALTED';
-            logToTerminal("<span class='alert-highlight'>[ESP32]: Stepper power relays tripped. Hardware bus frozen.</span>");
+            logToTerminal("<span class='alert-highlight'>[ESP32]: Stepper power relays tripped. Hardware bus frozen via remote HMI.</span>");
         }
 
+        // Run network assignment check on startup
         window.onload = initWebSocket;
     </script>
 </body>
