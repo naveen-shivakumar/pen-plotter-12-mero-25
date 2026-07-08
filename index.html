@@ -20,6 +20,7 @@
             --danger: #ef4444;
             --danger-hover: #dc2626;
             --success: #10b981;
+            --success-hover: #059669;
             --warning: #f59e0b;
             --action-cyan: #38bdf8;
             --action-cyan-hover: #0ea5e9;
@@ -38,6 +39,7 @@
             display: flex;
             flex-direction: row;
             height: 100vh;
+            width: 100vw;
             overflow: hidden;
         }
 
@@ -49,6 +51,7 @@
             flex-direction: column;
             border-right: 1px solid var(--panel-border);
             z-index: 10;
+            height: 100%;
         }
 
         .brand-container {
@@ -111,8 +114,8 @@
             flex-direction: column;
             padding: 15px;
             gap: 15px;
-            overflow-y: auto;
-            height: 100vh;
+            height: 100%;
+            width: calc(100% - 280px);
         }
 
         /* Responsive Top Row Grid */
@@ -120,8 +123,8 @@
             display: grid;
             grid-template-columns: 1fr 340px;
             gap: 15px;
-            min-height: 0;
             flex: 1;
+            min-height: 0; /* Important for structural scaling */
         }
 
         .tab-content {
@@ -129,6 +132,7 @@
             grid-template-columns: subgrid;
             grid-column: span 2;
             gap: 15px;
+            height: 100%;
         }
 
         .tab-content.active {
@@ -143,6 +147,7 @@
             display: flex;
             flex-direction: column;
             gap: 15px;
+            height: 100%;
         }
 
         .visualizer-panel {
@@ -151,18 +156,17 @@
             justify-content: center;
             align-items: center;
             background: radial-gradient(circle, #0b2246 0%, #071630 100%);
-            min-height: 300px;
         }
 
         .plot-canvas {
             border: 1px dashed rgba(255, 255, 255, 0.1);
             width: 100%;
             height: 100%;
-            max-height: 450px;
         }
 
         .control-panel {
             justify-content: flex-start;
+            overflow-y: auto;
         }
 
         .panel-header {
@@ -353,13 +357,13 @@
             font-size: 0.8rem;
             font-weight: 700;
             text-transform: uppercase;
-            background-color: var(--warning);
+            background-color: var(--success);
             color: var(--text-main);
-            box-shadow: 0 3px 8px rgba(245, 158, 11, 0.3);
+            box-shadow: 0 3px 8px rgba(16, 185, 129, 0.3);
         }
         
         .dpad-btn.home-btn:hover {
-            background-color: #d97706;
+            background-color: var(--success-hover);
         }
 
         /* Pen Position Sub-panel Control Module */
@@ -616,6 +620,7 @@
             border-radius: 6px;
             overflow: hidden;
             box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+            width: 100%;
         }
 
         .terminal-header {
@@ -683,6 +688,7 @@
 
             .main-layout {
                 height: auto;
+                width: 100%;
                 overflow-y: visible;
                 padding: 10px;
             }
@@ -697,7 +703,7 @@
             }
 
             .visualizer-panel {
-                min-height: 240px;
+                min-height: 300px;
             }
 
             .control-panel {
@@ -770,7 +776,7 @@
                     <div class="task-control-grid">
                         <button class="primary-task-btn" onclick="executeNicholasHaus()">
                             <svg viewBox="0 0 24 24"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3zm0 7.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-                            START TASK (HAUS)
+                            DRAW NICHOLAS HAUS
                         </button>
                     </div>
                     
@@ -892,7 +898,7 @@
     <script>
         let socket;
         let isConnected = false;
-        let currentPenState = "UP"; // Global dynamic state tracking
+        let currentPenState = "UP"; 
         let autoReconnectInterval = null;
         let activeEmergencyState = false;
 
@@ -933,157 +939,78 @@
                 isConnected = false; 
                 updateStatusBadge(false);
                 logToTerminal("<span class='alert-highlight'>[ESP32]: Link connection dropped.</span>");
-                
-                // Triggers auto-reconnection sequence if closed during an active emergency state
-                if (activeEmergencyState && !autoReconnectInterval) {
-                    startAutoReconnectPipeline();
-                }
-            };
-
-            socket.onerror = (error) => {
-                logToTerminal(`<span class='alert-highlight'>[ERROR]: Internal Web Handshake failed. Validate hardware IP mapping to ${targetIp}.</span>`);
-            };
-
-            // Custom dynamic parsing of incoming data lines
-            socket.onmessage = (event) => {
-                const message = event.data;
-                logToTerminal(`[ESP-FEED]: ${message}`);
-                parseIncomingHardwareData(message);
             };
         }
 
-        function parseIncomingHardwareData(data) {
-            // Evaluates real-time limit switch alert markers from data string lines
-            if (data.includes("LIMIT_X_MAX") || data.includes("LIMIT_X_MIN") || data.includes("LIMIT_Y_MAX") || data.includes("LIMIT_Y_MIN")) {
-                logToTerminal("<span class='alert-highlight'>[HARDWARE WARNING]: Hardware boundary Limit Switch activated! Axis motion locked.</span>");
-            }
+        function logToTerminal(message) {
+            const consoleLog = document.getElementById("terminal-console");
+            consoleLog.innerHTML += "<br>" + message;
+            consoleLog.scrollTop = consoleLog.scrollHeight;
         }
 
-        function startAutoReconnectPipeline() {
-            logToTerminal("<span class='warning-highlight'>[SYSTEM]: Initiating automatic loop background reconnect pipeline... Pinging controller...</span>");
-            autoReconnectInterval = setInterval(() => {
-                if (!isConnected) {
-                    logToTerminal("[SYSTEM]: Retrying connection pipeline to controller node...");
-                    initWebSocket();
-                }
-            }, 3000); // Poll attempt fired every 3 seconds until recovery
-        }
-
-        function updateStatusBadge(connected) {
-            const badge = document.getElementById('espBadge');
-            const dot = document.getElementById('espDot');
-            const text = document.getElementById('espText');
-            
-            if(connected) {
-                badge.style.color = 'var(--success)';
-                dot.style.backgroundColor = 'var(--success)';
-                dot.style.boxShadow = '0 0 8px var(--success)';
-                text.innerText = 'CONNECTED';
+        function updateStatusBadge(status) {
+            const badgeText = document.getElementById("espText");
+            const badgeDot = document.getElementById("espDot");
+            if(status) {
+                badgeText.innerText = "ONLINE";
+                badgeText.style.color = "var(--success)";
+                badgeDot.style.backgroundColor = "var(--success)";
+                badgeDot.style.boxShadow = "0 0 8px var(--success)";
             } else {
-                badge.style.color = 'var(--danger)';
-                dot.style.backgroundColor = 'var(--danger)';
-                dot.style.boxShadow = '0 0 8px var(--danger)';
-                text.innerText = 'OFFLINE';
+                badgeText.innerText = "OFFLINE";
+                badgeText.style.color = "var(--danger)";
+                badgeDot.style.backgroundColor = "var(--danger)";
+                badgeDot.style.boxShadow = "0 0 8px var(--danger)";
             }
-        }
-
-        function sendDrive(dir) {
-            logToTerminal(`[COMMAND]: Drive manual interaction triggered -> <span class='status-highlight'>${dir}</span>`);
-            
-            // Simulates local hardware switch boundaries warning
-            if(dir === 'X+' || dir === 'Y+') {
-                logToTerminal("<span class='warning-highlight'>[MONITOR]: Approaching Max Boundary Limit Switch zone.</span>");
-            } else if(dir === 'X-' || dir === 'Y-') {
-                logToTerminal("<span class='warning-highlight'>[MONITOR]: Approaching Min Boundary Limit Switch zone.</span>");
-            }
-
-            if (dir === 'HOME') {
-                logToTerminal("<span class='status-highlight'>[SYSTEM]: Triggering Home Sequence (H Command execution)...</span>");
-                if (isConnected && socket.readyState === WebSocket.OPEN) {
-                    socket.send("H");
-                }
-                return;
-            }
-
-            if (isConnected && socket.readyState === WebSocket.OPEN) {
-                socket.send(`JOG:${dir}`);
-            }
-        }
-
-        function setPenState(state) {
-            if (currentPenState === state) {
-                logToTerminal(`<span class='warning-highlight'>[WARNING]: PEN IS ALREADY IN ${state} POSITION! Command ignored.</span>`);
-                return;
-            }
-
-            currentPenState = state;
-            logToTerminal(`[COMMAND]: Moving Pen Assembly to -> <span class='status-highlight'>${state}</span>`);
-            
-            if (isConnected && socket.readyState === WebSocket.OPEN) {
-                socket.send(`PEN:${state}`);
-            }
-        }
-
-        function triggerEmergencyStop() {
-            logToTerminal("<span class='alert-highlight'>[CRITICAL]: EMERGENCY BREAK DETECTED. HALTING ALL INSTANT OPERATIONS.</span>");
-            activeEmergencyState = true;
-            
-            if (isConnected && socket.readyState === WebSocket.OPEN) {
-                socket.send("S"); // Transmits 'S' stopping parameter vector
-                socket.close();   // Force drop to initialize recovery system cleanly
-            } else {
-                // If offline, still safely engage auto reconnect loop logic
-                if(!autoReconnectInterval) startAutoReconnectPipeline();
-            }
-        }
-
-        function triggerDeviceReset() {
-            logToTerminal("<span class='warning-highlight'>[COMMAND]: Sending soft-reset operation vector over Serial Interface ('R')...</span>");
-            if (isConnected && socket.readyState === WebSocket.OPEN) {
-                socket.send("R");
-            }
-        }
-
-        function executeNicholasHaus() {
-            logToTerminal("[TASK]: Running baseline vector profile execution routine -> Nicholas Haus template.");
-            const pathPoly = document.getElementById('vector-path');
-            pathPoly.setAttribute('points', vectors.nicholashaus);
-            
-            if (isConnected && socket.readyState === WebSocket.OPEN) {
-                socket.send("RUN:NICHOLAS");
-            }
-        }
-
-        function loadVector(key) {
-            if(vectors[key]) {
-                logToTerminal(`[GALLERY]: Preview template buffered profile target loaded -> ${key}`);
-                document.getElementById('vector-path').setAttribute('points', vectors[key]);
-            }
-        }
-
-        function updateSpeed(val) {
-            document.getElementById('speed-display').innerText = `${val}%`;
-            if (isConnected && socket.readyState === WebSocket.OPEN) {
-                socket.send(`SPEED:${val}`);
-            }
-        }
-
-        function saveSettings() {
-            logToTerminal("<span class='success-highlight'>[SETTINGS]: Parameters buffered and flashed to NVRAM sectors successfully.</span>");
         }
 
         function switchTab(element, tabId) {
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             element.classList.add('active');
             document.getElementById(`tab-${tabId}`).classList.add('active');
         }
 
-        function logToTerminal(msg) {
-            const consoleEl = document.getElementById('terminal-console');
-            consoleEl.innerHTML += `<br>${msg}`;
-            consoleEl.scrollTop = consoleEl.scrollHeight;
+        function executeNicholasHaus() {
+            logToTerminal("[COMMAND]: Requesting execution sequence for Nicholas Haus.");
+            if (socket && isConnected) {
+                socket.send("HAUS");
+            }
+        }
+
+        function sendDrive(direction) {
+            logToTerminal(`[JOG]: Moving Axis -> ${direction}`);
+            if (socket && isConnected) {
+                socket.send(`MOVE:${direction}`);
+            }
+        }
+
+        function setPenState(state) {
+            logToTerminal(`[PEN]: Adjusting position -> ${state}`);
+            if (socket && isConnected) {
+                socket.send(`PEN:${state}`);
+            }
+        }
+
+        function updateSpeed(val) {
+            document.getElementById("speed-display").innerText = val + "%";
+            if (socket && isConnected) {
+                socket.send(`SPEED:${val}`);
+            }
+        }
+
+        function triggerEmergencyStop() {
+            logToTerminal("<span class='alert-highlight'>[HALT]: EMERGENCY BREAK INTERRUPT TRIGGERED!</span>");
+            if (socket && isConnected) {
+                socket.send("ESTOP");
+            }
+        }
+
+        function triggerDeviceReset() {
+            logToTerminal("[SYSTEM]: Dispatched hardware soft-reset request protocol.");
+            if (socket && isConnected) {
+                socket.send("RESET");
+            }
         }
     </script>
 </body>
