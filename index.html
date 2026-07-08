@@ -944,7 +944,12 @@
                 logToTerminal("<span class='alert-highlight'>[ESP32]: Link connection dropped.</span>");
             };
         }
-
+socket.onerror = () => {
+    logToTerminal("<span class='alert-highlight'>[ERROR]: WebSocket connection error.</span>");
+};
+socket.onmessage = (event) => {
+    logToTerminal(`[ESP32]: ${event.data}`);
+};
         function logToTerminal(message) {
             const consoleLog = document.getElementById("terminal-console");
             consoleLog.innerHTML += "<br>" + message;
@@ -975,39 +980,41 @@
         }
 
         function executeNicholasHaus() {
-            logToTerminal("[COMMAND]: Requesting execution sequence for Nicholas Haus.");
-            if (socket && isConnected) {
-                socket.send("HAUS");
-            }
-        }
+    logToTerminal("[COMMAND]: Requesting execution sequence for Nicholas Haus.");
+    if (socket && isConnected) {
+        socket.send("START");
+    }
+}
 
-        function sendDrive(direction) {
-            logToTerminal(`[JOG]: Moving Axis -> ${direction}`);
-            if (socket && isConnected) {
-                socket.send(`MOVE:${direction}`);
-            }
+function sendDrive(direction) {
+    logToTerminal(`[JOG]: Moving Axis -> ${direction}`);
+    if (socket && isConnected) {
+        if (direction === "HOME") {
+            socket.send("CALIBRATE");
+        } else {
+            socket.send(`JOG_${direction}`);
         }
+    }
+}
 
-        function setPenState(state) {
-            logToTerminal(`[PEN]: Adjusting position -> ${state}`);
-            if (socket && isConnected) {
-                socket.send(`PEN:${state}`);
-            }
-        }
+function setPenState(state) {
+    logToTerminal(`[PEN]: Adjusting position -> ${state}`);
+    if (socket && isConnected) {
+        socket.send(state === "UP" ? "PEN_UP" : "PEN_DOWN");
+    }
+}
 
-        function updateSpeed(val) {
-            document.getElementById("speed-display").innerText = val + "%";
-            if (socket && isConnected) {
-                socket.send(`SPEED:${val}`);
-            }
-        }
+function updateSpeed(val) {
+    document.getElementById("speed-display").innerText = val + "%";
+    // ESP32 has no SPEED handler yet — does nothing on device until you add one
+}
 
-        function triggerEmergencyStop() {
-            logToTerminal("<span class='alert-highlight'>[HALT]: EMERGENCY BREAK INTERRUPT TRIGGERED!</span>");
-            if (socket && isConnected) {
-                socket.send("ESTOP");
-            }
-        }
+function triggerEmergencyStop() {
+    logToTerminal("<span class='alert-highlight'>[HALT]: EMERGENCY BREAK INTERRUPT TRIGGERED!</span>");
+    if (socket && isConnected) {
+        socket.send("M0");
+    }
+}
 
         function triggerDeviceReset() {
             logToTerminal("[SYSTEM]: Dispatched hardware soft-reset request protocol.");
