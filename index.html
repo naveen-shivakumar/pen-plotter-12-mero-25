@@ -924,8 +924,8 @@
                 return;
             }
 
-            logToTerminal(`[SYSTEM]: Linking stream to ws://${targetIp}/ws...`);
-            socket = new WebSocket(`ws://${targetIp}/ws`);
+                  logToTerminal(`[SYSTEM]: Linking stream to ws://${targetIp}:81/...`);
+                  socket = new WebSocket(`ws://${targetIp}:81/`);
 
             socket.onopen = () => {
                 isConnected = true;
