@@ -118,13 +118,13 @@
             width: calc(100% - 280px);
         }
 
-        /* Responsive Top Row Grid */
+        /* Structural scaling row to fit perfectly inside 100% view */
         .top-row {
             display: grid;
             grid-template-columns: 1fr 340px;
             gap: 15px;
             flex: 1;
-            min-height: 0; /* Important for structural scaling */
+            min-height: 0; 
         }
 
         .tab-content {
@@ -143,11 +143,12 @@
             background-color: var(--panel-bg);
             border: 1px solid var(--panel-border);
             border-radius: 6px;
-            padding: 18px;
+            padding: 15px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 12px;
             height: 100%;
+            min-height: 0;
         }
 
         .visualizer-panel {
@@ -178,15 +179,16 @@
             text-align: center;
             border-bottom: 1px solid var(--panel-border);
             padding-bottom: 8px;
+            line-height: 1.4;
         }
 
         /* ESP Connection Layout with Manual IP Inputs */
         .esp-status-container {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
             background-color: rgba(0, 0, 0, 0.2);
-            padding: 12px;
+            padding: 10px;
             border-radius: 4px;
             border: 1px solid var(--panel-border);
             font-size: 0.8rem;
@@ -227,7 +229,7 @@
             background-color: rgba(7, 22, 48, 0.6);
             border: 1px solid var(--panel-border);
             border-radius: 4px;
-            padding: 8px 10px;
+            padding: 6px 10px;
             color: var(--text-main);
             font-family: 'Courier New', Courier, monospace;
             font-size: 0.85rem;
@@ -241,7 +243,7 @@
 
         .connect-btn {
             width: 100%;
-            padding: 10px;
+            padding: 8px;
             background-color: var(--sidebar-active);
             color: var(--text-main);
             border: 1px solid var(--panel-border);
@@ -277,7 +279,7 @@
         }
 
         .primary-task-btn {
-            padding: 14px;
+            padding: 10px;
             background-color: var(--action-cyan);
             color: var(--text-dark);
             border: none;
@@ -315,14 +317,14 @@
             display: flex;
             justify-content: center;
             width: 100%;
-            padding: 5px 0;
+            padding: 2px 0;
         }
 
         .dpad-container {
             display: grid;
-            grid-template-columns: repeat(3, 60px);
-            grid-template-rows: repeat(3, 60px);
-            gap: 10px;
+            grid-template-columns: repeat(3, 45px);
+            grid-template-rows: repeat(3, 45px);
+            gap: 8px;
         }
 
         .dpad-btn {
@@ -340,8 +342,8 @@
         }
 
         .dpad-btn svg {
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             fill: var(--text-dark);
         }
 
@@ -354,7 +356,7 @@
         }
 
         .dpad-btn.home-btn {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 700;
             text-transform: uppercase;
             background-color: var(--success);
@@ -370,12 +372,12 @@
         .pen-control-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
+            gap: 10px;
             width: 100%;
         }
 
         .pen-btn {
-            padding: 12px;
+            padding: 10px;
             border: 1px solid var(--panel-border);
             background-color: var(--sidebar-active);
             color: var(--text-main);
@@ -394,8 +396,8 @@
         }
 
         .pen-btn svg {
-            width: 16px;
-            height: 16px;
+            width: 14px;
+            height: 14px;
             fill: currentColor;
         }
 
@@ -416,7 +418,7 @@
             justify-content: space-between;
             font-size: 0.8rem;
             color: var(--text-muted);
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             font-weight: 500;
         }
 
@@ -424,7 +426,7 @@
             width: 100%;
             -webkit-appearance: none;
             appearance: none;
-            height: 8px;
+            height: 6px;
             border-radius: 4px;
             background: var(--sidebar-active);
             outline: none;
@@ -434,8 +436,8 @@
         .speed-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             border-radius: 50%;
             background: var(--btn-light);
             cursor: pointer;
@@ -450,7 +452,7 @@
         }
 
         .estop-btn {
-            padding: 14px;
+            padding: 10px;
             background-color: var(--danger);
             color: var(--text-main);
             border: none;
@@ -470,8 +472,8 @@
         }
 
         .estop-btn svg {
-            width: 16px;
-            height: 16px;
+            width: 14px;
+            height: 14px;
             fill: currentColor;
         }
 
@@ -484,7 +486,7 @@
         }
 
         .reset-btn {
-            padding: 14px;
+            padding: 10px;
             background-color: #4b5563;
             color: var(--text-main);
             border: 1px solid #6b7280;
@@ -506,8 +508,8 @@
         }
 
         .reset-btn svg {
-            width: 16px;
-            height: 16px;
+            width: 14px;
+            height: 14px;
             fill: currentColor;
         }
 
@@ -613,8 +615,8 @@
         .terminal-container {
             display: flex;
             flex-direction: column;
-            height: 200px;
-            min-height: 160px;
+            height: 180px;
+            min-height: 140px;
             background-color: rgba(5, 15, 30, 0.95);
             border: 1px solid var(--panel-border);
             border-radius: 6px;
@@ -756,9 +758,11 @@
                 </div>
 
                 <div class="panel control-panel">
-                    <div class="panel-header">Pen Plotter - Team 12 
-                        - MERO 2025-26 
-                        Human Machine Interface</div>
+                    <div class="panel-header">
+                        PEN PLOTTER - TEAM 12<br>
+                        MERO 2025-26<br>
+                        HUMAN MACHINE INTERFACE
+                    </div>
                     
                     <div class="esp-status-container">
                         <div class="status-row">
@@ -903,7 +907,6 @@
         let currentPenState = "UP"; 
         let autoReconnectInterval = null;
         let activeEmergencyState = false;
-
         const vectors = {
             nicholashaus: "60,170 240,170 240,70 60,70 60,170 240,70 150,10 60,70 240,170",
             star: "120,20 150,82 220,92 170,141 181,210 120,177 59,210 70,141 20,92 89,82 120,20",
@@ -929,16 +932,14 @@
                 activeEmergencyState = false;
                 updateStatusBadge(true);
                 logToTerminal(`<span class='success-highlight'>[ESP32]: WebSocket Connection Established with host node ${targetIp}!</span>`);
-                
                 if (autoReconnectInterval) {
                     clearInterval(autoReconnectInterval);
                     autoReconnectInterval = null;
                     logToTerminal("<span class='success-highlight'>[SYSTEM]: Auto-reconnection script disengaged successfully.</span>");
                 }
             };
-
             socket.onclose = () => {
-                isConnected = false; 
+                isConnected = false;
                 updateStatusBadge(false);
                 logToTerminal("<span class='alert-highlight'>[ESP32]: Link connection dropped.</span>");
             };
