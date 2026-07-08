@@ -118,13 +118,12 @@
             width: calc(100% - 280px);
         }
 
-        /* Structural scaling row to fit perfectly inside 100% view */
         .top-row {
             display: grid;
             grid-template-columns: 1fr 340px;
             gap: 15px;
             flex: 1;
-            min-height: 0; 
+            min-height: 0;
         }
 
         .tab-content {
@@ -154,6 +153,7 @@
         .visualizer-panel {
             position: relative;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             background: radial-gradient(circle, #0b2246 0%, #071630 100%);
@@ -163,6 +163,26 @@
             border: 1px dashed rgba(255, 255, 255, 0.1);
             width: 100%;
             height: 100%;
+        }
+
+        .draw-status-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            padding: 5px 10px;
+            border-radius: 20px;
+            background-color: rgba(0,0,0,0.35);
+            color: var(--text-muted);
+            border: 1px solid var(--panel-border);
+        }
+
+        .draw-status-badge.drawing {
+            color: var(--action-cyan);
+            border-color: var(--action-cyan);
         }
 
         .control-panel {
@@ -312,6 +332,11 @@
             transform: scale(0.97);
         }
 
+        .primary-task-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         /* D-Pad Manual Jog Layout */
         .dpad-wrapper {
             display: flex;
@@ -363,7 +388,7 @@
             color: var(--text-main);
             box-shadow: 0 3px 8px rgba(16, 185, 129, 0.3);
         }
-        
+
         .dpad-btn.home-btn:hover {
             background-color: var(--success-hover);
         }
@@ -409,6 +434,7 @@
             transform: scale(0.97);
         }
 
+        /* --- SPEED SELECT (replaces slider) --- */
         .speed-control-container {
             width: 100%;
         }
@@ -418,29 +444,45 @@
             justify-content: space-between;
             font-size: 0.8rem;
             color: var(--text-muted);
-            margin-bottom: 6px;
+            margin-bottom: 8px;
             font-weight: 500;
         }
 
-        .speed-slider {
+        .speed-btn-group {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
             width: 100%;
-            -webkit-appearance: none;
-            appearance: none;
-            height: 6px;
-            border-radius: 4px;
-            background: var(--sidebar-active);
-            outline: none;
-            cursor: pointer;
         }
 
-        .speed-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: var(--btn-light);
+        .speed-btn {
+            padding: 10px 6px;
+            border: 1px solid var(--panel-border);
+            background-color: rgba(0, 0, 0, 0.2);
+            color: var(--text-muted);
+            font-weight: 700;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            border-radius: 6px;
             cursor: pointer;
+            transition: background-color 0.15s, color 0.15s, border-color 0.15s, transform 0.05s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .speed-btn:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+        }
+
+        .speed-btn:active {
+            transform: scale(0.96);
+        }
+
+        .speed-btn.active {
+            background-color: var(--action-cyan);
+            color: var(--text-dark);
+            border-color: var(--action-cyan);
+            box-shadow: 0 3px 8px rgba(56, 189, 248, 0.25);
         }
 
         /* Emergency & Reset Action Bar layout */
@@ -748,12 +790,13 @@
 
     <div class="main-layout">
         <div class="top-row">
-            
+
             <div id="tab-main" class="tab-content active">
                 <div class="panel visualizer-panel">
+                    <div class="draw-status-badge" id="drawStatusBadge">IDLE</div>
                     <svg class="plot-canvas" id="main-vector-preview" viewBox="0 0 300 200">
-                        <polyline id="vector-path" points="" fill="none" stroke="#ffffff" stroke-width="2" stroke-dasharray="1 1" />
-                        <circle id="pen-tip" cx="-10" cy="-10" r="5" fill="#38bdf8" />
+                        <polyline id="vector-path" points="" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        <circle id="pen-tip" cx="-10" cy="-10" r="5" fill="#f59e0b" stroke="#ffffff" stroke-width="1" />
                     </svg>
                 </div>
 
@@ -763,7 +806,7 @@
                         MERO 2025-26<br>
                         HUMAN MACHINE INTERFACE
                     </div>
-                    
+
                     <div class="esp-status-container">
                         <div class="status-row">
                             <span class="esp-label">ESP32 LINK</span>
@@ -780,12 +823,12 @@
                     </div>
 
                     <div class="task-control-grid">
-                        <button class="primary-task-btn" onclick="executeNicholasHaus()">
+                        <button class="primary-task-btn" id="drawBtn" onclick="executeNicholasHaus()">
                             <svg viewBox="0 0 24 24"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3zm0 7.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
                             DRAW NICHOLAS HAUS
                         </button>
                     </div>
-                    
+
                     <div class="dpad-wrapper">
                         <div class="dpad-container">
                             <div></div>
@@ -793,7 +836,7 @@
                                 <svg viewBox="0 0 24 24"><path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
                             </button>
                             <div></div>
-                            
+
                             <button class="dpad-btn" onclick="sendDrive('X-')">
                                 <svg viewBox="0 0 24 24"><path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"/></svg>
                             </button>
@@ -801,7 +844,7 @@
                             <button class="dpad-btn" onclick="sendDrive('X+')">
                                 <svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
                             </button>
-                            
+
                             <div></div>
                             <button class="dpad-btn" onclick="sendDrive('Y-')">
                                 <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
@@ -824,9 +867,13 @@
                     <div class="speed-control-container">
                         <div class="speed-label-wrapper">
                             <span>FEEDRATE VELOCITY</span>
-                            <span id="speed-display">100%</span>
+                            <span id="speed-display">1x</span>
                         </div>
-                        <input type="range" min="10" max="200" value="100" class="speed-slider" id="speedSlider" oninput="updateSpeed(this.value)">
+                        <div class="speed-btn-group">
+                            <button class="speed-btn" id="speedBtn-0.5" onclick="selectSpeed(0.5)">0.5x</button>
+                            <button class="speed-btn active" id="speedBtn-1" onclick="selectSpeed(1)">1x</button>
+                            <button class="speed-btn" id="speedBtn-2" onclick="selectSpeed(2)">2x</button>
+                        </div>
                     </div>
 
                     <div class="safety-control-grid">
@@ -904,14 +951,159 @@
     <script>
         let socket;
         let isConnected = false;
-        let currentPenState = "UP"; 
+        let currentPenState = "UP";
         let autoReconnectInterval = null;
         let activeEmergencyState = false;
+
+        // --- SPEED STATE ---
+        let speedMultiplier = 1; // 0.5, 1, or 2 -- used for both ESP command and animation timing
+
+        // --- LIVE-VIEW ANIMATION STATE ---
+        // NOTE: The ESP32 firmware currently does not send real position telemetry
+        // back over the socket, so this is a SIMULATED replay of the known Nikolaus
+        // Haus path, timed to match the firmware's real holdFor(2000) pauses at each
+        // vertex (scaled by the selected speed). It is not reading live encoder
+        // position. For a true live view, the ESP32 needs to periodically send
+        // something like "POS:x,y" during moveTo(), and this UI would need a
+        // matching onmessage handler to consume it instead of replaying a script.
+        let animationToken = 0; // incremented to cancel any in-flight animation
+
         const vectors = {
             nicholashaus: "60,170 240,170 240,70 60,70 60,170 240,70 150,10 60,70 240,170",
             star: "120,20 150,82 220,92 170,141 181,210 120,177 59,210 70,141 20,92 89,82 120,20",
             grid: "10,10 290,10 290,190 10,190 10,10 10,70 290,70 290,130 10,130 10,190 100,190 100,10 190,10 190,190"
         };
+
+        // Nikolaus Haus path in machine mm, matching drawNikolausHouse() in firmware.
+        // Each step is the move FROM the previous point TO "to", with pen state
+        // during that move, and whether to pause (holdAfter) like holdFor(2000).
+        const NIKOLAUS_START = [0, 0]; // local (0,0) = homed/parked position
+        const NIKOLAUS_STEPS = [
+            { to: [50, 50],   pen: 'up',   holdAfter: true },  // pen up move to A
+            { to: [50, 50],   pen: 'down', holdAfter: true },  // pen down at A (no travel)
+            { to: [50, 75],   pen: 'down', holdAfter: true },  // A -> B
+            { to: [62.5, 90], pen: 'down', holdAfter: true },  // B -> C
+            { to: [75, 75],   pen: 'down', holdAfter: true },  // C -> D
+            { to: [50, 75],   pen: 'down', holdAfter: true },  // D -> B
+            { to: [75, 50],   pen: 'down', holdAfter: true },  // B -> E
+            { to: [50, 50],   pen: 'down', holdAfter: true },  // E -> A
+            { to: [75, 75],   pen: 'down', holdAfter: true },  // A -> D
+            { to: [75, 50],   pen: 'down', holdAfter: true },  // D -> E
+            { to: [75, 50],   pen: 'up',   holdAfter: false }, // pen up at E
+        ];
+
+        // Maps machine mm coordinates to the 300x200 SVG viewBox.
+        function mmToSvg(xmm, ymm) {
+            const svgX = 30 + xmm * 2.6;
+            const svgY = 190 - ymm * 1.8;
+            return [svgX, svgY];
+        }
+
+        function setDrawStatusBadge(text, drawing) {
+            const badge = document.getElementById("drawStatusBadge");
+            badge.innerText = text;
+            badge.classList.toggle("drawing", !!drawing);
+        }
+
+        function resetVisualizerPath() {
+            document.getElementById("vector-path").setAttribute("points", "");
+            const [sx, sy] = mmToSvg(NIKOLAUS_START[0], NIKOLAUS_START[1]);
+            document.getElementById("pen-tip").setAttribute("cx", sx);
+            document.getElementById("pen-tip").setAttribute("cy", sy);
+        }
+
+        function cancelDrawingAnimation() {
+            animationToken++; // any running animation loop will see a stale token and stop
+            setDrawStatusBadge("IDLE", false);
+            document.getElementById("drawBtn").disabled = false;
+        }
+
+        // Simulated live-view replay of the Nikolaus Haus path.
+        function animateNikolausHouse() {
+            const myToken = ++animationToken;
+            const drawBtn = document.getElementById("drawBtn");
+            const penTip = document.getElementById("pen-tip");
+            const pathEl = document.getElementById("vector-path");
+
+            resetVisualizerPath();
+            setDrawStatusBadge("DRAWING...", true);
+            drawBtn.disabled = true;
+
+            let points = []; // accumulated drawn points (pen-down segments only)
+            let current = NIKOLAUS_START;
+
+            // base speed at 1x, scaled by speedMultiplier
+            const MM_PER_SEC = 25;       // nominal travel speed for the animation
+            const HOLD_MS = 2000;        // matches firmware holdFor(2000)
+
+            let stepIndex = 0;
+
+            function runStep() {
+                if (myToken !== animationToken) return; // cancelled (estop/reset/new run)
+                if (stepIndex >= NIKOLAUS_STEPS.length) {
+                    setDrawStatusBadge("DONE", false);
+                    drawBtn.disabled = false;
+                    return;
+                }
+
+                const step = NIKOLAUS_STEPS[stepIndex];
+                const from = current;
+                const to = step.to;
+                const dx = to[0] - from[0];
+                const dy = to[1] - from[1];
+                const distMm = Math.sqrt(dx * dx + dy * dy);
+                const travelMs = Math.max(80, (distMm / (MM_PER_SEC * speedMultiplier)) * 1000);
+
+                const startTime = performance.now();
+
+                function frame(now) {
+                    if (myToken !== animationToken) return;
+                    const t = Math.min(1, (now - startTime) / travelMs);
+                    const ix = from[0] + dx * t;
+                    const iy = from[1] + dy * t;
+                    const [sx, sy] = mmToSvg(ix, iy);
+                    penTip.setAttribute("cx", sx);
+                    penTip.setAttribute("cy", sy);
+
+                    if (step.pen === 'down') {
+                        const livePoints = points.concat([[sx, sy]]);
+                        pathEl.setAttribute("points", livePoints.map(p => p.join(",")).join(" "));
+                    }
+
+                    if (t < 1) {
+                        requestAnimationFrame(frame);
+                    } else {
+                        current = to;
+                        const [fx, fy] = mmToSvg(to[0], to[1]);
+                        if (step.pen === 'down') {
+                            points.push([fx, fy]);
+                            pathEl.setAttribute("points", points.map(p => p.join(",")).join(" "));
+                        }
+                        stepIndex++;
+                        const waitMs = step.holdAfter ? (HOLD_MS / speedMultiplier) : 0;
+                        setTimeout(runStep, waitMs);
+                    }
+                }
+                requestAnimationFrame(frame);
+            }
+
+            runStep();
+        }
+
+        function selectSpeed(val) {
+            speedMultiplier = val;
+            document.getElementById("speed-display").innerText = val + "x";
+            document.querySelectorAll(".speed-btn").forEach(btn => btn.classList.remove("active"));
+            document.getElementById("speedBtn-" + val).classList.add("active");
+
+            // Sends as a percentage (50/100/200), same scale the old slider used.
+            // NOTE: ESP32 firmware has no SPEED: handler yet -- this currently
+            // affects the on-screen animation timing only, not real motor speed.
+            if (socket && isConnected) {
+                socket.send(`SPEED:${Math.round(val * 100)}`);
+            }
+            logToTerminal(`[SPEED]: Feedrate set to ${val}x`);
+        }
 
         function initWebSocket() {
             if (socket) {
@@ -924,8 +1116,8 @@
                 return;
             }
 
-                  logToTerminal(`[SYSTEM]: Linking stream to ws://${targetIp}:81/...`);
-                  socket = new WebSocket(`ws://${targetIp}:81/`);
+            logToTerminal(`[SYSTEM]: Linking stream to ws://${targetIp}:81/...`);
+            socket = new WebSocket(`ws://${targetIp}:81/`);
 
             socket.onopen = () => {
                 isConnected = true;
@@ -943,13 +1135,14 @@
                 updateStatusBadge(false);
                 logToTerminal("<span class='alert-highlight'>[ESP32]: Link connection dropped.</span>");
             };
+            socket.onerror = () => {
+                logToTerminal("<span class='alert-highlight'>[ERROR]: WebSocket connection error.</span>");
+            };
+            socket.onmessage = (event) => {
+                logToTerminal(`[ESP32]: ${event.data}`);
+            };
         }
-socket.onerror = () => {
-    logToTerminal("<span class='alert-highlight'>[ERROR]: WebSocket connection error.</span>");
-};
-socket.onmessage = (event) => {
-    logToTerminal(`[ESP32]: ${event.data}`);
-};
+
         function logToTerminal(message) {
             const consoleLog = document.getElementById("terminal-console");
             consoleLog.innerHTML += "<br>" + message;
@@ -959,7 +1152,7 @@ socket.onmessage = (event) => {
         function updateStatusBadge(status) {
             const badgeText = document.getElementById("espText");
             const badgeDot = document.getElementById("espDot");
-            if(status) {
+            if (status) {
                 badgeText.innerText = "ONLINE";
                 badgeText.style.color = "var(--success)";
                 badgeDot.style.backgroundColor = "var(--success)";
@@ -980,48 +1173,63 @@ socket.onmessage = (event) => {
         }
 
         function executeNicholasHaus() {
-    logToTerminal("[COMMAND]: Requesting execution sequence for Nicholas Haus.");
-    if (socket && isConnected) {
-        socket.send("START");
-    }
-}
-
-function sendDrive(direction) {
-    logToTerminal(`[JOG]: Moving Axis -> ${direction}`);
-    if (socket && isConnected) {
-        if (direction === "HOME") {
-            socket.send("CALIBRATE");
-        } else {
-            socket.send(`JOG_${direction}`);
+            logToTerminal("[COMMAND]: Requesting execution sequence for Nicholas Haus.");
+            if (socket && isConnected) {
+                socket.send("START");
+            }
+            animateNikolausHouse();
         }
-    }
-}
 
-function setPenState(state) {
-    logToTerminal(`[PEN]: Adjusting position -> ${state}`);
-    if (socket && isConnected) {
-        socket.send(state === "UP" ? "PEN_UP" : "PEN_DOWN");
-    }
-}
+        function sendDrive(direction) {
+            logToTerminal(`[JOG]: Moving Axis -> ${direction}`);
+            if (socket && isConnected) {
+                if (direction === "HOME") {
+                    socket.send("CALIBRATE");
+                } else {
+                    socket.send(`JOG_${direction}`);
+                }
+            }
+        }
 
-function updateSpeed(val) {
-    document.getElementById("speed-display").innerText = val + "%";
-    // ESP32 has no SPEED handler yet — does nothing on device until you add one
-}
+        function setPenState(state) {
+            logToTerminal(`[PEN]: Adjusting position -> ${state}`);
+            if (socket && isConnected) {
+                socket.send(state === "UP" ? "PEN_UP" : "PEN_DOWN");
+            }
+        }
 
-function triggerEmergencyStop() {
-    logToTerminal("<span class='alert-highlight'>[HALT]: EMERGENCY BREAK INTERRUPT TRIGGERED!</span>");
-    if (socket && isConnected) {
-        socket.send("M0");
-    }
-}
+        function triggerEmergencyStop() {
+            logToTerminal("<span class='alert-highlight'>[HALT]: EMERGENCY BREAK INTERRUPT TRIGGERED!</span>");
+            if (socket && isConnected) {
+                socket.send("M0");
+            }
+            cancelDrawingAnimation();
+        }
 
         function triggerDeviceReset() {
             logToTerminal("[SYSTEM]: Dispatched hardware soft-reset request protocol.");
             if (socket && isConnected) {
                 socket.send("RESET");
             }
+            cancelDrawingAnimation();
+            resetVisualizerPath();
         }
+
+        function saveSettings() {
+            logToTerminal("[SYSTEM]: Settings saved locally (not yet sent to device).");
+        }
+
+        function loadVector(name) {
+            const pts = vectors[name];
+            if (!pts) return;
+            document.getElementById("vector-path").setAttribute("points", pts);
+            switchTab(document.querySelector('.nav-item'), 'main');
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.querySelector('.nav-item').classList.add('active');
+        }
+
+        // Initialize the pen-tip/path to the parked (0,0) position on load.
+        resetVisualizerPath();
     </script>
 </body>
 </html>
