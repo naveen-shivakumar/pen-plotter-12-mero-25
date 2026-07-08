@@ -267,7 +267,7 @@
         /* Action Buttons Styling */
         .task-control-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr;
             gap: 10px;
             width: 100%;
         }
@@ -300,15 +300,6 @@
 
         .primary-task-btn:hover {
             background-color: var(--action-cyan-hover);
-        }
-
-        .primary-task-btn.cal-btn {
-            background-color: var(--warning);
-            box-shadow: 0 4px 10px rgba(245, 158, 11, 0.2);
-        }
-
-        .primary-task-btn.cal-btn:hover {
-            background-color: #d97706;
         }
 
         .primary-task-btn:active {
@@ -362,7 +353,13 @@
             font-size: 0.8rem;
             font-weight: 700;
             text-transform: uppercase;
-            background-color: #cbd5e1;
+            background-color: var(--warning);
+            color: var(--text-main);
+            box-shadow: 0 3px 8px rgba(245, 158, 11, 0.3);
+        }
+        
+        .dpad-btn.home-btn:hover {
+            background-color: #d97706;
         }
 
         /* Pen Position Sub-panel Control Module */
@@ -440,15 +437,22 @@
             cursor: pointer;
         }
 
-        .estop-btn {
+        /* Emergency & Reset Action Bar layout */
+        .safety-control-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 10px;
             width: 100%;
+        }
+
+        .estop-btn {
             padding: 14px;
             background-color: var(--danger);
             color: var(--text-main);
             border: none;
             border-radius: 6px;
             font-weight: 700;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             cursor: pointer;
@@ -456,7 +460,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             transition: background-color 0.1s, transform 0.05s;
             -webkit-tap-highlight-color: transparent;
         }
@@ -473,6 +477,34 @@
 
         .estop-btn:active {
             transform: scale(0.97);
+        }
+
+        .reset-btn {
+            padding: 14px;
+            background-color: #4b5563;
+            color: var(--text-main);
+            border: 1px solid #6b7280;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            transition: background-color 0.1s, transform 0.05s;
+        }
+
+        .reset-btn:hover {
+            background-color: #374151;
+        }
+
+        .reset-btn svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
         }
 
         /* --- SETTINGS VIEW STYLES --- */
@@ -573,20 +605,38 @@
             font-weight: 600;
         }
 
-        /* --- BOTTOM STATUS TERMINAL --- */
-        .bottom-row {
-            height: 180px;
-            min-height: 150px;
+        /* --- BOTTOM LIVE STATUS MONITOR TERMINAL --- */
+        .terminal-container {
+            display: flex;
+            flex-direction: column;
+            height: 200px;
+            min-height: 160px;
             background-color: rgba(5, 15, 30, 0.95);
             border: 1px solid var(--panel-border);
             border-radius: 6px;
-            padding: 15px;
+            overflow: hidden;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .terminal-header {
+            background-color: #050f1e;
+            padding: 6px 15px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--panel-border);
+            text-transform: uppercase;
+        }
+
+        .bottom-row {
+            flex: 1;
+            padding: 10px 15px;
             font-family: 'Courier New', Courier, monospace;
             overflow-y: auto;
             font-size: 0.85rem;
             line-height: 1.5;
             color: #d1d5db;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
         }
 
         .status-highlight { color: #38bdf8; font-weight: bold; }
@@ -659,8 +709,8 @@
                 grid-template-rows: repeat(3, 65px);
             }
 
-            .bottom-row {
-                height: 150px;
+            .terminal-container {
+                height: 160px;
                 margin-top: 10px;
             }
         }
@@ -720,11 +770,7 @@
                     <div class="task-control-grid">
                         <button class="primary-task-btn" onclick="executeNicholasHaus()">
                             <svg viewBox="0 0 24 24"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3zm0 7.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-                            START TASK
-                        </button>
-                        <button class="primary-task-btn cal-btn" onclick="triggerCalibration()">
-                            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.25z"/></svg>
-                            CALIBRATION
+                            START TASK (HAUS)
                         </button>
                     </div>
                     
@@ -771,10 +817,16 @@
                         <input type="range" min="10" max="200" value="100" class="speed-slider" id="speedSlider" oninput="updateSpeed(this.value)">
                     </div>
 
-                    <button class="estop-btn" onclick="triggerEmergencyStop()">
-                        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-                        EMERGENCY BREAK
-                    </button>
+                    <div class="safety-control-grid">
+                        <button class="estop-btn" onclick="triggerEmergencyStop()">
+                            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                            EMERGENCY BREAK
+                        </button>
+                        <button class="reset-btn" onclick="triggerDeviceReset()">
+                            <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                            RESET DEVICE
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -829,14 +881,20 @@
 
         </div>
 
-        <div class="bottom-row" id="terminal-console">
-            [SYSTEM]: Device interface initializing...
+        <div class="terminal-container">
+            <div class="terminal-header">Live Status Monitor</div>
+            <div class="bottom-row" id="terminal-console">
+                [SYSTEM]: Device interface initializing...
+            </div>
         </div>
     </div>
 
     <script>
         let socket;
         let isConnected = false;
+        let currentPenState = "UP"; // Global dynamic state tracking
+        let autoReconnectInterval = null;
+        let activeEmergencyState = false;
 
         const vectors = {
             nicholashaus: "60,170 240,170 240,70 60,70 60,170 240,70 150,10 60,70 240,170",
@@ -845,15 +903,13 @@
         };
 
         function initWebSocket() {
-            // Drop existing link handles cleanly if re-connecting to a new target node
             if (socket) {
                 socket.close();
             }
 
-            // Extract user-entered IP field string dynamically
             const targetIp = document.getElementById('espIpInput').value.trim();
             if (!targetIp) {
-                logToTerminal("<span class='alert-highlight'>[ERROR]: Connection aborted. Invalid or blank IP address entered.</span>");
+                logToTerminal("<span class='alert-highlight'>[ERROR]: Connection aborted. Invalid or blank IP address.</span>");
                 return;
             }
 
@@ -862,19 +918,55 @@
 
             socket.onopen = () => {
                 isConnected = true;
+                activeEmergencyState = false;
                 updateStatusBadge(true);
                 logToTerminal(`<span class='success-highlight'>[ESP32]: WebSocket Connection Established with host node ${targetIp}!</span>`);
+                
+                if (autoReconnectInterval) {
+                    clearInterval(autoReconnectInterval);
+                    autoReconnectInterval = null;
+                    logToTerminal("<span class='success-highlight'>[SYSTEM]: Auto-reconnection script disengaged successfully.</span>");
+                }
             };
 
             socket.onclose = () => {
                 isConnected = false; 
                 updateStatusBadge(false);
-                logToTerminal("<span class='alert-highlight'>[ESP32]: Link connection dropped. Re-enter your configuration parameters to retry.</span>");
+                logToTerminal("<span class='alert-highlight'>[ESP32]: Link connection dropped.</span>");
+                
+                // Triggers auto-reconnection sequence if closed during an active emergency state
+                if (activeEmergencyState && !autoReconnectInterval) {
+                    startAutoReconnectPipeline();
+                }
             };
 
             socket.onerror = (error) => {
                 logToTerminal(`<span class='alert-highlight'>[ERROR]: Internal Web Handshake failed. Validate hardware IP mapping to ${targetIp}.</span>`);
             };
+
+            // Custom dynamic parsing of incoming data lines
+            socket.onmessage = (event) => {
+                const message = event.data;
+                logToTerminal(`[ESP-FEED]: ${message}`);
+                parseIncomingHardwareData(message);
+            };
+        }
+
+        function parseIncomingHardwareData(data) {
+            // Evaluates real-time limit switch alert markers from data string lines
+            if (data.includes("LIMIT_X_MAX") || data.includes("LIMIT_X_MIN") || data.includes("LIMIT_Y_MAX") || data.includes("LIMIT_Y_MIN")) {
+                logToTerminal("<span class='alert-highlight'>[HARDWARE WARNING]: Hardware boundary Limit Switch activated! Axis motion locked.</span>");
+            }
+        }
+
+        function startAutoReconnectPipeline() {
+            logToTerminal("<span class='warning-highlight'>[SYSTEM]: Initiating automatic loop background reconnect pipeline... Pinging controller...</span>");
+            autoReconnectInterval = setInterval(() => {
+                if (!isConnected) {
+                    logToTerminal("[SYSTEM]: Retrying connection pipeline to controller node...");
+                    initWebSocket();
+                }
+            }, 3000); // Poll attempt fired every 3 seconds until recovery
         }
 
         function updateStatusBadge(connected) {
@@ -895,126 +987,104 @@
             }
         }
 
-        function switchTab(element, tabName) {
-            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        function sendDrive(dir) {
+            logToTerminal(`[COMMAND]: Drive manual interaction triggered -> <span class='status-highlight'>${dir}</span>`);
             
-            element.classList.add('active');
-            document.getElementById(`tab-${tabName}`).classList.add('active');
-            logToTerminal(`[UI]: Transferred focus to module pane: "${tabName.toUpperCase()}"`);
-        }
+            // Simulates local hardware switch boundaries warning
+            if(dir === 'X+' || dir === 'Y+') {
+                logToTerminal("<span class='warning-highlight'>[MONITOR]: Approaching Max Boundary Limit Switch zone.</span>");
+            } else if(dir === 'X-' || dir === 'Y-') {
+                logToTerminal("<span class='warning-highlight'>[MONITOR]: Approaching Min Boundary Limit Switch zone.</span>");
+            }
 
-        function logToTerminal(message) {
-            const consoleElem = document.getElementById('terminal-console');
-            consoleElem.innerHTML += `<br>${message}`;
-            consoleElem.scrollTop = consoleElem.scrollHeight;
-        }
-
-        function executeNicholasHaus() {
-            if (!isConnected) {
-                logToTerminal("<span class='alert-highlight'>[ERROR]: Command aborted. Target hardware link is down.</span>");
+            if (dir === 'HOME') {
+                logToTerminal("<span class='status-highlight'>[SYSTEM]: Triggering Home Sequence (H Command execution)...</span>");
+                if (isConnected && socket.readyState === WebSocket.OPEN) {
+                    socket.send("H");
+                }
                 return;
             }
-            
-            document.getElementById('vector-path').setAttribute('points', vectors.nicholashaus);
-            document.getElementById('pen-tip').setAttribute('cx', '240');
-            document.getElementById('pen-tip').setAttribute('cy', '170');
-            
-            const payload = {
-                task: "draw_nikolaushaus",
-                points: [
-                    {x: 60, y: 170}, {x: 240, y: 170}, {x: 240, y: 70}, 
-                    {x: 60, y: 70},  {x: 60, y: 170},  {x: 240, y: 70}, 
-                    {x: 150, y: 10}, {x: 60, y: 70},   {x: 240, y: 170}
-                ]
-            };
 
-            socket.send(JSON.stringify(payload));
-            logToTerminal(`[WORKING STEP]: <span class='status-highlight'>Plotting started: Nicholas Haus matrix stream dispatched.</span>`);
-            
-            // Simulating parsing cycles updates inside local HMI system context
-            setTimeout(() => {
-                logToTerminal("<span class='success-highlight'>[SYSTEM]: End of plotting reached. Task array completed.</span>");
-            }, 4000);
-        }
-
-        function triggerCalibration() {
-            if (!isConnected) {
-                logToTerminal("<span class='alert-highlight'>[ERROR]: Calibration cycle aborted. Connection offline.</span>");
-                return;
-            }
-            socket.send("CALIBRATE");
-            logToTerminal("<span class='warning-highlight'>[HARDWARE]: Sent System Alignment Profile Command (CALIBRATE)</span>");
-        }
-
-        function sendDrive(direction) {
-            if (!isConnected) {
-                logToTerminal("<span class='alert-highlight'>[ERROR]: Frame transmission dropped. ESP32 is offline.</span>");
-                return;
-            }
-            if (direction === 'HOME') {
-                socket.send("G28");
-                logToTerminal("[HARDWARE]: Dispatched Home Execution Order (G28)");
-            } else {
-                socket.send(`JOG_${direction}`);
-                logToTerminal(`[DRIVE]: Manual pulse steps forward token axis: ${direction}`);
+            if (isConnected && socket.readyState === WebSocket.OPEN) {
+                socket.send(`JOG:${dir}`);
             }
         }
 
         function setPenState(state) {
-            if (!isConnected) {
-                logToTerminal("<span class='alert-highlight'>[ERROR]: Frame transmission dropped. ESP32 is offline.</span>");
+            if (currentPenState === state) {
+                logToTerminal(`<span class='warning-highlight'>[WARNING]: PEN IS ALREADY IN ${state} POSITION! Command ignored.</span>`);
                 return;
             }
-            socket.send(`PEN_${state}`);
-            logToTerminal(`[ACTUATOR]: Sent Pen command token: <span class='status-highlight'>PEN_${state}</span>`);
-        }
 
-        function updateSpeed(value) {
-            document.getElementById('speed-display').innerText = value + '%';
-            if (!isConnected) return;
-            socket.send(`SPEED_${value}`);
-            logToTerminal(`[PARAMETER]: Feed rate scaler adjusted modifier payload to: ${value}%`);
-        }
-
-        function saveSettings() {
-            const x = document.getElementById('stepsX').value;
-            const y = document.getElementById('stepsY').value;
-            const acc = document.getElementById('accel').value;
+            currentPenState = state;
+            logToTerminal(`[COMMAND]: Moving Pen Assembly to -> <span class='status-highlight'>${state}</span>`);
             
-            logToTerminal(`[EEPROM]: Transmitting hardware structures variables down...`);
-            if (isConnected) {
-                socket.send(`CONFIG_X:${x}_Y:${y}_ACCEL:${acc}`);
+            if (isConnected && socket.readyState === WebSocket.OPEN) {
+                socket.send(`PEN:${state}`);
             }
-            logToTerminal("<span class='success-highlight'>[SYSTEM]: NVRAM profile payload updated locally.</span>");
-        }
-
-        function loadVector(key) {
-            const pathData = vectors[key];
-            document.getElementById('vector-path').setAttribute('points', pathData);
-            
-            if (key === 'star') { document.getElementById('pen-tip').setAttribute('cx', '120'); document.getElementById('pen-tip').setAttribute('cy', '20'); }
-            if (key === 'grid') { document.getElementById('pen-tip').setAttribute('cx', '190'); document.getElementById('pen-tip').setAttribute('cy', '190'); }
-            
-            if (isConnected) {
-                socket.send(`LOAD_TEMPLATE_${key.toUpperCase()}`);
-            }
-            logToTerminal(`[PARSER]: Active layout switch template updated to: "${key.toUpperCase()}"`);
         }
 
         function triggerEmergencyStop() {
-            logToTerminal("<span class='alert-highlight'>[FAILURE]: !!! EMERGENCY STOP BROKEN COMMAND EXECUTION DISPATCHED !!!</span>");
-            if (isConnected) {
-                socket.send("M0");
+            logToTerminal("<span class='alert-highlight'>[CRITICAL]: EMERGENCY BREAK DETECTED. HALTING ALL INSTANT OPERATIONS.</span>");
+            activeEmergencyState = true;
+            
+            if (isConnected && socket.readyState === WebSocket.OPEN) {
+                socket.send("S"); // Transmits 'S' stopping parameter vector
+                socket.close();   // Force drop to initialize recovery system cleanly
+            } else {
+                // If offline, still safely engage auto reconnect loop logic
+                if(!autoReconnectInterval) startAutoReconnectPipeline();
             }
-            isConnected = false;
-            updateStatusBadge(false);
-            document.getElementById('espText').innerText = 'HALTED';
-            logToTerminal("<span class='alert-highlight'>[ESP32]: Stepper power relays tripped. Hardware bus frozen via remote HMI.</span>");
         }
 
-        // Run network assignment check on startup
-        window.onload = initWebSocket;
+        function triggerDeviceReset() {
+            logToTerminal("<span class='warning-highlight'>[COMMAND]: Sending soft-reset operation vector over Serial Interface ('R')...</span>");
+            if (isConnected && socket.readyState === WebSocket.OPEN) {
+                socket.send("R");
+            }
+        }
+
+        function executeNicholasHaus() {
+            logToTerminal("[TASK]: Running baseline vector profile execution routine -> Nicholas Haus template.");
+            const pathPoly = document.getElementById('vector-path');
+            pathPoly.setAttribute('points', vectors.nicholashaus);
+            
+            if (isConnected && socket.readyState === WebSocket.OPEN) {
+                socket.send("RUN:NICHOLAS");
+            }
+        }
+
+        function loadVector(key) {
+            if(vectors[key]) {
+                logToTerminal(`[GALLERY]: Preview template buffered profile target loaded -> ${key}`);
+                document.getElementById('vector-path').setAttribute('points', vectors[key]);
+            }
+        }
+
+        function updateSpeed(val) {
+            document.getElementById('speed-display').innerText = `${val}%`;
+            if (isConnected && socket.readyState === WebSocket.OPEN) {
+                socket.send(`SPEED:${val}`);
+            }
+        }
+
+        function saveSettings() {
+            logToTerminal("<span class='success-highlight'>[SETTINGS]: Parameters buffered and flashed to NVRAM sectors successfully.</span>");
+        }
+
+        function switchTab(element, tabId) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            
+            element.classList.add('active');
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+        }
+
+        function logToTerminal(msg) {
+            const consoleEl = document.getElementById('terminal-console');
+            consoleEl.innerHTML += `<br>${msg}`;
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
     </script>
 </body>
 </html>
