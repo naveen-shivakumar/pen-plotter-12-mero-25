@@ -472,18 +472,37 @@
             width: 100%;
         }
 
+        /* Speed tiers now stack a name over the raw PWM duty, so the label is
+           honest: the three duties (200/220/240) are a narrow band, not a
+           0.5x..2x spread, so we show "Slow/Normal/Fast" + the actual number. */
         .speed-btn {
-            padding: 10px 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            padding: 9px 6px;
             border: 1px solid var(--panel-border);
             background-color: rgba(0, 0, 0, 0.2);
             color: var(--text-muted);
-            font-weight: 700;
-            font-size: 0.85rem;
-            letter-spacing: 0.5px;
             border-radius: 6px;
             cursor: pointer;
             transition: background-color 0.15s, color 0.15s, border-color 0.15s, transform 0.05s;
             -webkit-tap-highlight-color: transparent;
+        }
+
+        .speed-btn-name {
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .speed-btn-duty {
+            font-size: 0.6rem;
+            font-weight: 600;
+            letter-spacing: 0.4px;
+            opacity: 0.65;
+            font-family: 'Courier New', Courier, monospace;
         }
 
         .speed-btn:hover {
@@ -500,6 +519,10 @@
             color: var(--text-dark);
             border-color: var(--action-cyan);
             box-shadow: 0 3px 8px rgba(56, 189, 248, 0.25);
+        }
+
+        .speed-btn.active .speed-btn-duty {
+            opacity: 0.85;
         }
 
         .safety-control-grid {
@@ -834,7 +857,7 @@
         </div>
         <ul class="nav-menu">
             <li class="nav-item active" onclick="switchTab(this, 'main')">
-                <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69-.98l.38-2.65c.03-.24.24-.42.49-.42h4c.25 0 .46.18.49.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+                <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69-.98l.38-2.65c.03-.24.24-.42.49-.42h4c.25 0 .46.18.49.42l.38 2.65c.61.25 1.17.59 1.69.98l2.49-1c.23-.09.49 0 .61.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
                 <span>Control</span>
             </li>
             <li class="nav-item" onclick="switchTab(this, 'settings')">
@@ -856,7 +879,11 @@
                     <div class="panel visualizer-panel">
                         <div class="draw-status-bar" id="drawStatusBar">IDLE</div>
                         <svg class="plot-canvas" id="main-vector-preview" viewBox="0 0 300 200">
+                            <!-- Static gallery/template preview (Gallery tab) -->
                             <polyline id="vector-path" points="" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                            <!-- Live draw: STRAIGHT reference segments between real device vertices (VERT:x,y). -->
+                            <path id="live-path" d="" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                            <!-- Pen tip: follows real encoder position (POS:x,y) live. -->
                             <circle id="pen-tip" cx="-10" cy="-10" r="5" fill="#f59e0b" stroke="#ffffff" stroke-width="1" />
                         </svg>
                     </div>
@@ -935,13 +962,22 @@
 
                     <div class="speed-control-container">
                         <div class="speed-label-wrapper">
-                            <span>FEEDRATE VELOCITY</span>
-                            <span id="speed-display">1x</span>
+                            <span>DRAW FEEDRATE</span>
+                            <span id="speed-display">Normal · duty 220</span>
                         </div>
                         <div class="speed-btn-group">
-                            <button class="speed-btn" id="speedBtn-0.5" onclick="selectSpeed(0.5)">0.5x</button>
-                            <button class="speed-btn active" id="speedBtn-1" onclick="selectSpeed(1)">1x</button>
-                            <button class="speed-btn" id="speedBtn-2" onclick="selectSpeed(2)">2x</button>
+                            <button class="speed-btn" id="speedBtn-200" onclick="selectSpeed(200)">
+                                <span class="speed-btn-name">Slow</span>
+                                <span class="speed-btn-duty">duty 200</span>
+                            </button>
+                            <button class="speed-btn active" id="speedBtn-220" onclick="selectSpeed(220)">
+                                <span class="speed-btn-name">Normal</span>
+                                <span class="speed-btn-duty">duty 220</span>
+                            </button>
+                            <button class="speed-btn" id="speedBtn-240" onclick="selectSpeed(240)">
+                                <span class="speed-btn-name">Fast</span>
+                                <span class="speed-btn-duty">duty 240</span>
+                            </button>
                         </div>
                     </div>
 
@@ -1023,16 +1059,23 @@
         let autoReconnectInterval = null;
         let activeEmergencyState = false;
 
-        let speedMultiplier = 1; // 0.5, 1, or 2 -- sent to ESP32 as SPEED:<percent>
+        // Draw feedrate is now the ACTUAL PWM duty the ESP32 should use.
+        // Slow=200, Normal=220, Fast=240 -- all above the 190 stall floor,
+        // sent verbatim as SPEED:<duty>.
+        let speedDuty = 220;
+        const SPEED_TIERS = { 200: "Slow", 220: "Normal", 240: "Fast" };
 
         // --- LIVE TELEMETRY STATE ---
         // Driven entirely by real messages from the ESP32 over the websocket:
-        //   POS:x,y     -> real encoder-derived position in mm
-        //   PEN:UP/DOWN -> real pen state
+        //   POS:x,y     -> real encoder-derived position in mm (moves the pen tip)
+        //   VERT:x,y    -> a real corner the device reached; UI joins these with
+        //                  STRAIGHT lines (reference figure, not a traced curve)
+        //   PEN:UP/DOWN -> real pen state (DOWN starts a fresh straight stroke)
         //   STATUS:...  -> mirrors setOled() messages on the device
         //   WARN:...    -> limit switch hits, redundant pen commands, etc.
         let telemetryPenDown = false;
-        let liveDrawnPoints = [];
+        let penJustDown = false;   // next VERT should start a new sub-path (MoveTo)
+        let livePathD = "";        // accumulated SVG path data for straight strokes
         let isDrawingActive = false;
 
         const vectors = {
@@ -1075,25 +1118,27 @@
         }
 
         function resetVisualizerPath() {
-            liveDrawnPoints = [];
+            livePathD = "";
+            penJustDown = false;
+            document.getElementById("live-path").setAttribute("d", "");
             document.getElementById("vector-path").setAttribute("points", "");
             document.getElementById("pen-tip").setAttribute("cx", -10);
             document.getElementById("pen-tip").setAttribute("cy", -10);
         }
 
-        function selectSpeed(val) {
-            speedMultiplier = val;
-            document.getElementById("speed-display").innerText = val + "x";
+        function selectSpeed(duty) {
+            speedDuty = duty;
+            const name = SPEED_TIERS[duty] || duty;
+            document.getElementById("speed-display").innerText = `${name} · duty ${duty}`;
             document.querySelectorAll(".speed-btn").forEach(btn => btn.classList.remove("active"));
-            document.getElementById("speedBtn-" + val).classList.add("active");
+            document.getElementById("speedBtn-" + duty).classList.add("active");
 
-            // Sent as a percentage (50/100/200). ESP32 currently accepts and
-            // logs this but does not yet apply it to DRAW_DUTY/HOME_DUTY --
-            // real feedrate scaling needs that firmware addition too.
+            // Sent as the raw PWM duty. The ESP32 clamps to [190..255] and uses
+            // it directly for moveTo()/JOG_ moves (homing stays fixed).
             if (socket && isConnected) {
-                socket.send(`SPEED:${Math.round(val * 100)}`);
+                socket.send("SPEED:" + duty);
             }
-            logToTerminal(`[SPEED]: Feedrate set to ${val}x`);
+            logToTerminal(`[SPEED]: Draw feedrate set to ${name} (duty ${duty})`);
         }
 
         function initWebSocket() {
@@ -1115,6 +1160,8 @@
                 activeEmergencyState = false;
                 updateStatusBadge(true);
                 logToTerminal(`<span class='success-highlight'>[ESP32]: WebSocket Connection Established with host node ${targetIp}!</span>`);
+                // Push the currently selected feedrate so the device matches the UI.
+                socket.send("SPEED:" + speedDuty);
                 if (autoReconnectInterval) {
                     clearInterval(autoReconnectInterval);
                     autoReconnectInterval = null;
@@ -1135,6 +1182,9 @@
         }
 
         function handleTelemetryMessage(data) {
+            // Live position -> move the pen tip ONLY. We deliberately do NOT
+            // draw from POS samples anymore, so encoder jitter/timing no longer
+            // shows up as a wobbly curve.
             if (data.startsWith("POS:")) {
                 const parts = data.substring(4).split(",");
                 const xmm = parseFloat(parts[0]);
@@ -1143,18 +1193,32 @@
                 const [sx, sy] = mmToSvg(xmm, ymm);
                 document.getElementById("pen-tip").setAttribute("cx", sx);
                 document.getElementById("pen-tip").setAttribute("cy", sy);
-                if (telemetryPenDown) {
-                    liveDrawnPoints.push([sx, sy]);
-                    document.getElementById("vector-path").setAttribute(
-                        "points",
-                        liveDrawnPoints.map(p => p.join(",")).join(" ")
-                    );
+                return;
+            }
+
+            // A real vertex/corner reached by the device -> extend the drawn
+            // figure with a STRAIGHT segment. This is the reference geometry.
+            if (data.startsWith("VERT:")) {
+                const parts = data.substring(5).split(",");
+                const xmm = parseFloat(parts[0]);
+                const ymm = parseFloat(parts[1]);
+                if (isNaN(xmm) || isNaN(ymm)) return;
+                const [sx, sy] = mmToSvg(xmm, ymm);
+                if (penJustDown) {
+                    // Start of a new stroke: MoveTo, no line drawn from the
+                    // previous stroke's end (avoids drawing travel moves).
+                    livePathD += `M ${sx.toFixed(2)} ${sy.toFixed(2)} `;
+                    penJustDown = false;
+                } else {
+                    livePathD += `L ${sx.toFixed(2)} ${sy.toFixed(2)} `;
                 }
+                document.getElementById("live-path").setAttribute("d", livePathD.trim());
                 return;
             }
 
             if (data.startsWith("PEN:")) {
                 telemetryPenDown = (data === "PEN:DOWN");
+                if (telemetryPenDown) penJustDown = true; // next VERT begins a fresh straight stroke
                 logToTerminal(`[PEN]: Device reports pen is ${telemetryPenDown ? "DOWN" : "UP"}.`);
                 return;
             }
