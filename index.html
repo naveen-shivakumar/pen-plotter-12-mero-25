@@ -43,7 +43,6 @@
             overflow: hidden;
         }
 
-        /* --- SIDEBAR (DESKTOP) --- */
         .sidebar {
             width: 280px;
             background-color: var(--sidebar-bg);
@@ -107,7 +106,6 @@
             color: var(--text-main);
         }
 
-        /* --- MAIN CONTENT CONTAINER --- */
         .main-layout {
             flex: 1;
             display: flex;
@@ -124,14 +122,17 @@
             gap: 15px;
             flex: 1;
             min-height: 0;
+            overflow: hidden;
         }
 
         .tab-content {
             display: none;
             grid-template-columns: subgrid;
+            grid-template-rows: minmax(0, 1fr);
             grid-column: span 2;
             gap: 15px;
             height: 100%;
+            overflow: hidden;
         }
 
         .tab-content.active {
@@ -150,6 +151,18 @@
             min-height: 0;
         }
 
+        /* Canvas column: stacks the visualizer panel + warnings box in a
+           single grid column, so the warnings box matches the visualizer's
+           width exactly and never crosses into the control panel column. */
+        .canvas-column {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            height: 100%;
+            min-height: 0;
+            overflow: hidden;
+        }
+
         .visualizer-panel {
             position: relative;
             display: flex;
@@ -157,6 +170,9 @@
             justify-content: center;
             align-items: center;
             background: radial-gradient(circle, #0b2246 0%, #071630 100%);
+            flex: 1;
+            min-height: 0;
+            height: auto;
         }
 
         .plot-canvas {
@@ -165,24 +181,30 @@
             height: 100%;
         }
 
-        .draw-status-badge {
+        .draw-status-bar {
             position: absolute;
             top: 12px;
             left: 12px;
-            font-size: 0.7rem;
+            right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 16px;
+            font-size: 0.85rem;
             font-weight: 700;
             letter-spacing: 0.5px;
             text-transform: uppercase;
-            padding: 5px 10px;
-            border-radius: 20px;
-            background-color: rgba(0,0,0,0.35);
-            color: var(--text-muted);
+            color: var(--text-main);
+            background-color: rgba(0, 0, 0, 0.4);
             border: 1px solid var(--panel-border);
+            border-radius: 6px;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
-        .draw-status-badge.drawing {
-            color: var(--action-cyan);
+        .draw-status-bar.drawing {
             border-color: var(--action-cyan);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
         }
 
         .control-panel {
@@ -202,7 +224,6 @@
             line-height: 1.4;
         }
 
-        /* ESP Connection Layout with Manual IP Inputs */
         .esp-status-container {
             display: flex;
             flex-direction: column;
@@ -290,7 +311,6 @@
             fill: currentColor;
         }
 
-        /* Action Buttons Styling */
         .task-control-grid {
             display: grid;
             grid-template-columns: 1fr;
@@ -337,7 +357,6 @@
             cursor: not-allowed;
         }
 
-        /* D-Pad Manual Jog Layout */
         .dpad-wrapper {
             display: flex;
             justify-content: center;
@@ -393,7 +412,6 @@
             background-color: var(--success-hover);
         }
 
-        /* Pen Position Sub-panel Control Module */
         .pen-control-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -434,7 +452,6 @@
             transform: scale(0.97);
         }
 
-        /* --- SPEED SELECT (replaces slider) --- */
         .speed-control-container {
             width: 100%;
         }
@@ -485,7 +502,6 @@
             box-shadow: 0 3px 8px rgba(56, 189, 248, 0.25);
         }
 
-        /* Emergency & Reset Action Bar layout */
         .safety-control-grid {
             display: grid;
             grid-template-columns: 1.2fr 1fr;
@@ -555,7 +571,6 @@
             fill: currentColor;
         }
 
-        /* --- SETTINGS VIEW STYLES --- */
         .settings-panel {
             grid-column: span 2;
         }
@@ -610,7 +625,6 @@
             background-color: #1e4680;
         }
 
-        /* --- GALLERY VIEW STYLES --- */
         .gallery-panel {
             grid-column: span 2;
         }
@@ -653,7 +667,54 @@
             font-weight: 600;
         }
 
-        /* --- BOTTOM LIVE STATUS MONITOR TERMINAL --- */
+        /* --- WARNINGS PANEL (lives inside canvas-column, so its width
+             always matches the visualizer panel / status bar above it) --- */
+        .warning-container {
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            max-height: 100px;
+            background-color: rgba(30, 15, 5, 0.9);
+            border: 1px solid var(--warning);
+            border-radius: 6px;
+            overflow: hidden;
+            transition: box-shadow 0.2s;
+        }
+
+        .warning-container.flash {
+            box-shadow: 0 0 14px rgba(245, 158, 11, 0.55);
+        }
+
+        .warning-header {
+            background-color: rgba(245, 158, 11, 0.15);
+            padding: 6px 15px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            color: var(--warning);
+            border-bottom: 1px solid var(--warning);
+            text-transform: uppercase;
+        }
+
+        .warning-body {
+            flex: 1;
+            padding: 8px 15px;
+            font-family: 'Courier New', Courier, monospace;
+            overflow-y: auto;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            color: #fde3b8;
+        }
+
+        .warning-empty {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .warning-time {
+            color: var(--text-muted);
+        }
+
         .terminal-container {
             display: flex;
             flex-direction: column;
@@ -693,7 +754,6 @@
         .success-highlight { color: var(--success); font-weight: bold; }
         .warning-highlight { color: var(--warning); font-weight: bold; }
 
-        /* --- MOBILE LAYOUT QUERY --- */
         @media (max-width: 768px) {
             body {
                 flex-direction: column;
@@ -792,12 +852,21 @@
         <div class="top-row">
 
             <div id="tab-main" class="tab-content active">
-                <div class="panel visualizer-panel">
-                    <div class="draw-status-badge" id="drawStatusBadge">IDLE</div>
-                    <svg class="plot-canvas" id="main-vector-preview" viewBox="0 0 300 200">
-                        <polyline id="vector-path" points="" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                        <circle id="pen-tip" cx="-10" cy="-10" r="5" fill="#f59e0b" stroke="#ffffff" stroke-width="1" />
-                    </svg>
+                <div class="canvas-column">
+                    <div class="panel visualizer-panel">
+                        <div class="draw-status-bar" id="drawStatusBar">IDLE</div>
+                        <svg class="plot-canvas" id="main-vector-preview" viewBox="0 0 300 200">
+                            <polyline id="vector-path" points="" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                            <circle id="pen-tip" cx="-10" cy="-10" r="5" fill="#f59e0b" stroke="#ffffff" stroke-width="1" />
+                        </svg>
+                    </div>
+
+                    <div class="warning-container" id="warningContainer">
+                        <div class="warning-header">⚠ WARNINGS</div>
+                        <div class="warning-body" id="warning-console">
+                            <span class="warning-empty">No active warnings</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="panel control-panel">
@@ -951,22 +1020,20 @@
     <script>
         let socket;
         let isConnected = false;
-        let currentPenState = "UP";
         let autoReconnectInterval = null;
         let activeEmergencyState = false;
 
-        // --- SPEED STATE ---
-        let speedMultiplier = 1; // 0.5, 1, or 2 -- used for both ESP command and animation timing
+        let speedMultiplier = 1; // 0.5, 1, or 2 -- sent to ESP32 as SPEED:<percent>
 
-        // --- LIVE-VIEW ANIMATION STATE ---
-        // NOTE: The ESP32 firmware currently does not send real position telemetry
-        // back over the socket, so this is a SIMULATED replay of the known Nikolaus
-        // Haus path, timed to match the firmware's real holdFor(2000) pauses at each
-        // vertex (scaled by the selected speed). It is not reading live encoder
-        // position. For a true live view, the ESP32 needs to periodically send
-        // something like "POS:x,y" during moveTo(), and this UI would need a
-        // matching onmessage handler to consume it instead of replaying a script.
-        let animationToken = 0; // incremented to cancel any in-flight animation
+        // --- LIVE TELEMETRY STATE ---
+        // Driven entirely by real messages from the ESP32 over the websocket:
+        //   POS:x,y     -> real encoder-derived position in mm
+        //   PEN:UP/DOWN -> real pen state
+        //   STATUS:...  -> mirrors setOled() messages on the device
+        //   WARN:...    -> limit switch hits, redundant pen commands, etc.
+        let telemetryPenDown = false;
+        let liveDrawnPoints = [];
+        let isDrawingActive = false;
 
         const vectors = {
             nicholashaus: "60,170 240,170 240,70 60,70 60,170 240,70 150,10 60,70 240,170",
@@ -974,120 +1041,44 @@
             grid: "10,10 290,10 290,190 10,190 10,10 10,70 290,70 290,130 10,130 10,190 100,190 100,10 190,10 190,190"
         };
 
-        // Nikolaus Haus path in machine mm, matching drawNikolausHouse() in firmware.
-        // Each step is the move FROM the previous point TO "to", with pen state
-        // during that move, and whether to pause (holdAfter) like holdFor(2000).
-        const NIKOLAUS_START = [0, 0]; // local (0,0) = homed/parked position
-        const NIKOLAUS_STEPS = [
-            { to: [50, 50],   pen: 'up',   holdAfter: true },  // pen up move to A
-            { to: [50, 50],   pen: 'down', holdAfter: true },  // pen down at A (no travel)
-            { to: [50, 75],   pen: 'down', holdAfter: true },  // A -> B
-            { to: [62.5, 90], pen: 'down', holdAfter: true },  // B -> C
-            { to: [75, 75],   pen: 'down', holdAfter: true },  // C -> D
-            { to: [50, 75],   pen: 'down', holdAfter: true },  // D -> B
-            { to: [75, 50],   pen: 'down', holdAfter: true },  // B -> E
-            { to: [50, 50],   pen: 'down', holdAfter: true },  // E -> A
-            { to: [75, 75],   pen: 'down', holdAfter: true },  // A -> D
-            { to: [75, 50],   pen: 'down', holdAfter: true },  // D -> E
-            { to: [75, 50],   pen: 'up',   holdAfter: false }, // pen up at E
-        ];
+        // Maps machine mm coordinates to the SVG canvas, centered on the
+        // Nikolaus Haus bounding box (x:50-75, y:50-90 mm) rather than the
+        // full workspace, so the drawing sits centered regardless of where
+        // "home" physically is.
+        const HOUSE_MIN_X = 50, HOUSE_MAX_X = 75;
+        const HOUSE_MIN_Y = 50, HOUSE_MAX_Y = 90;
+        const CANVAS_W = 300, CANVAS_H = 200;
+        const CANVAS_PAD = 40;
 
-        // Maps machine mm coordinates to the 300x200 SVG viewBox.
+        const houseW = HOUSE_MAX_X - HOUSE_MIN_X;
+        const houseH = HOUSE_MAX_Y - HOUSE_MIN_Y;
+        const availW = CANVAS_W - CANVAS_PAD * 2;
+        const availH = CANVAS_H - CANVAS_PAD * 2;
+        const mmScale = Math.min(availW / houseW, availH / houseH);
+        const scaledW = houseW * mmScale;
+        const scaledH = houseH * mmScale;
+        const offsetX = (CANVAS_W - scaledW) / 2;
+        const offsetY = (CANVAS_H - scaledH) / 2;
+
         function mmToSvg(xmm, ymm) {
-            const svgX = 30 + xmm * 2.6;
-            const svgY = 190 - ymm * 1.8;
+            const svgX = offsetX + (xmm - HOUSE_MIN_X) * mmScale;
+            const svgY = offsetY + (HOUSE_MAX_Y - ymm) * mmScale;
             return [svgX, svgY];
         }
 
-        function setDrawStatusBadge(text, drawing) {
-            const badge = document.getElementById("drawStatusBadge");
-            badge.innerText = text;
-            badge.classList.toggle("drawing", !!drawing);
+        function setDrawStatusBar(text, drawing) {
+            const bar = document.getElementById("drawStatusBar");
+            bar.innerText = text;
+            bar.classList.toggle("drawing", !!drawing);
+            isDrawingActive = !!drawing;
+            document.getElementById("drawBtn").disabled = !!drawing;
         }
 
         function resetVisualizerPath() {
+            liveDrawnPoints = [];
             document.getElementById("vector-path").setAttribute("points", "");
-            const [sx, sy] = mmToSvg(NIKOLAUS_START[0], NIKOLAUS_START[1]);
-            document.getElementById("pen-tip").setAttribute("cx", sx);
-            document.getElementById("pen-tip").setAttribute("cy", sy);
-        }
-
-        function cancelDrawingAnimation() {
-            animationToken++; // any running animation loop will see a stale token and stop
-            setDrawStatusBadge("IDLE", false);
-            document.getElementById("drawBtn").disabled = false;
-        }
-
-        // Simulated live-view replay of the Nikolaus Haus path.
-        function animateNikolausHouse() {
-            const myToken = ++animationToken;
-            const drawBtn = document.getElementById("drawBtn");
-            const penTip = document.getElementById("pen-tip");
-            const pathEl = document.getElementById("vector-path");
-
-            resetVisualizerPath();
-            setDrawStatusBadge("DRAWING...", true);
-            drawBtn.disabled = true;
-
-            let points = []; // accumulated drawn points (pen-down segments only)
-            let current = NIKOLAUS_START;
-
-            // base speed at 1x, scaled by speedMultiplier
-            const MM_PER_SEC = 25;       // nominal travel speed for the animation
-            const HOLD_MS = 2000;        // matches firmware holdFor(2000)
-
-            let stepIndex = 0;
-
-            function runStep() {
-                if (myToken !== animationToken) return; // cancelled (estop/reset/new run)
-                if (stepIndex >= NIKOLAUS_STEPS.length) {
-                    setDrawStatusBadge("DONE", false);
-                    drawBtn.disabled = false;
-                    return;
-                }
-
-                const step = NIKOLAUS_STEPS[stepIndex];
-                const from = current;
-                const to = step.to;
-                const dx = to[0] - from[0];
-                const dy = to[1] - from[1];
-                const distMm = Math.sqrt(dx * dx + dy * dy);
-                const travelMs = Math.max(80, (distMm / (MM_PER_SEC * speedMultiplier)) * 1000);
-
-                const startTime = performance.now();
-
-                function frame(now) {
-                    if (myToken !== animationToken) return;
-                    const t = Math.min(1, (now - startTime) / travelMs);
-                    const ix = from[0] + dx * t;
-                    const iy = from[1] + dy * t;
-                    const [sx, sy] = mmToSvg(ix, iy);
-                    penTip.setAttribute("cx", sx);
-                    penTip.setAttribute("cy", sy);
-
-                    if (step.pen === 'down') {
-                        const livePoints = points.concat([[sx, sy]]);
-                        pathEl.setAttribute("points", livePoints.map(p => p.join(",")).join(" "));
-                    }
-
-                    if (t < 1) {
-                        requestAnimationFrame(frame);
-                    } else {
-                        current = to;
-                        const [fx, fy] = mmToSvg(to[0], to[1]);
-                        if (step.pen === 'down') {
-                            points.push([fx, fy]);
-                            pathEl.setAttribute("points", points.map(p => p.join(",")).join(" "));
-                        }
-                        stepIndex++;
-                        const waitMs = step.holdAfter ? (HOLD_MS / speedMultiplier) : 0;
-                        setTimeout(runStep, waitMs);
-                    }
-                }
-                requestAnimationFrame(frame);
-            }
-
-            runStep();
+            document.getElementById("pen-tip").setAttribute("cx", -10);
+            document.getElementById("pen-tip").setAttribute("cy", -10);
         }
 
         function selectSpeed(val) {
@@ -1096,9 +1087,9 @@
             document.querySelectorAll(".speed-btn").forEach(btn => btn.classList.remove("active"));
             document.getElementById("speedBtn-" + val).classList.add("active");
 
-            // Sends as a percentage (50/100/200), same scale the old slider used.
-            // NOTE: ESP32 firmware has no SPEED: handler yet -- this currently
-            // affects the on-screen animation timing only, not real motor speed.
+            // Sent as a percentage (50/100/200). ESP32 currently accepts and
+            // logs this but does not yet apply it to DRAW_DUTY/HOME_DUTY --
+            // real feedrate scaling needs that firmware addition too.
             if (socket && isConnected) {
                 socket.send(`SPEED:${Math.round(val * 100)}`);
             }
@@ -1139,8 +1130,78 @@
                 logToTerminal("<span class='alert-highlight'>[ERROR]: WebSocket connection error.</span>");
             };
             socket.onmessage = (event) => {
-                logToTerminal(`[ESP32]: ${event.data}`);
+                handleTelemetryMessage(event.data);
             };
+        }
+
+        function handleTelemetryMessage(data) {
+            if (data.startsWith("POS:")) {
+                const parts = data.substring(4).split(",");
+                const xmm = parseFloat(parts[0]);
+                const ymm = parseFloat(parts[1]);
+                if (isNaN(xmm) || isNaN(ymm)) return;
+                const [sx, sy] = mmToSvg(xmm, ymm);
+                document.getElementById("pen-tip").setAttribute("cx", sx);
+                document.getElementById("pen-tip").setAttribute("cy", sy);
+                if (telemetryPenDown) {
+                    liveDrawnPoints.push([sx, sy]);
+                    document.getElementById("vector-path").setAttribute(
+                        "points",
+                        liveDrawnPoints.map(p => p.join(",")).join(" ")
+                    );
+                }
+                return;
+            }
+
+            if (data.startsWith("PEN:")) {
+                telemetryPenDown = (data === "PEN:DOWN");
+                logToTerminal(`[PEN]: Device reports pen is ${telemetryPenDown ? "DOWN" : "UP"}.`);
+                return;
+            }
+
+            if (data.startsWith("STATUS:")) {
+                const msg = data.substring(7);
+                logToTerminal(`[STATUS]: ${msg}`);
+                const lower = msg.toLowerCase();
+                if (lower.includes("drawing nikolas") || lower.includes("drawing nikolaus")) {
+                    setDrawStatusBar("DRAWING...", true);
+                } else if (lower.includes("complete") || lower.includes("done")) {
+                    setDrawStatusBar("DONE", false);
+                } else if (lower.includes("homing")) {
+                    setDrawStatusBar("HOMING...", true);
+                } else if (lower.includes("homed") || lower.includes("ready")) {
+                    setDrawStatusBar("IDLE", false);
+                } else if (lower.includes("emergency")) {
+                    setDrawStatusBar("EMERGENCY", false);
+                } else {
+                    setDrawStatusBar(msg.toUpperCase(), isDrawingActive);
+                }
+                return;
+            }
+
+            if (data.startsWith("WARN:")) {
+                const msg = data.substring(5);
+                addWarning(msg);
+                logToTerminal(`<span class='warning-highlight'>[WARN]: ${msg}</span>`);
+                return;
+            }
+
+            logToTerminal(`[ESP32]: ${data}`);
+        }
+
+        function addWarning(text) {
+            const box = document.getElementById('warning-console');
+            const emptyMsg = box.querySelector('.warning-empty');
+            if (emptyMsg) emptyMsg.remove();
+            const entry = document.createElement('div');
+            const time = new Date().toLocaleTimeString();
+            entry.innerHTML = `⚠ <span class="warning-time">[${time}]</span> ${text}`;
+            box.appendChild(entry);
+            box.scrollTop = box.scrollHeight;
+
+            const container = document.getElementById('warningContainer');
+            container.classList.add('flash');
+            setTimeout(() => container.classList.remove('flash'), 900);
         }
 
         function logToTerminal(message) {
@@ -1174,10 +1235,11 @@
 
         function executeNicholasHaus() {
             logToTerminal("[COMMAND]: Requesting execution sequence for Nicholas Haus.");
+            resetVisualizerPath();
+            setDrawStatusBar("STARTING...", true);
             if (socket && isConnected) {
                 socket.send("START");
             }
-            animateNikolausHouse();
         }
 
         function sendDrive(direction) {
@@ -1192,7 +1254,7 @@
         }
 
         function setPenState(state) {
-            logToTerminal(`[PEN]: Adjusting position -> ${state}`);
+            logToTerminal(`[PEN]: Requesting pen -> ${state}`);
             if (socket && isConnected) {
                 socket.send(state === "UP" ? "PEN_UP" : "PEN_DOWN");
             }
@@ -1203,7 +1265,7 @@
             if (socket && isConnected) {
                 socket.send("M0");
             }
-            cancelDrawingAnimation();
+            setDrawStatusBar("EMERGENCY", false);
         }
 
         function triggerDeviceReset() {
@@ -1211,7 +1273,7 @@
             if (socket && isConnected) {
                 socket.send("RESET");
             }
-            cancelDrawingAnimation();
+            setDrawStatusBar("IDLE", false);
             resetVisualizerPath();
         }
 
@@ -1223,13 +1285,10 @@
             const pts = vectors[name];
             if (!pts) return;
             document.getElementById("vector-path").setAttribute("points", pts);
-            switchTab(document.querySelector('.nav-item'), 'main');
             document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
             document.querySelector('.nav-item').classList.add('active');
+            switchTab(document.querySelector('.nav-item'), 'main');
         }
-
-        // Initialize the pen-tip/path to the parked (0,0) position on load.
-        resetVisualizerPath();
     </script>
 </body>
 </html>
