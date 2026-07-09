@@ -525,6 +525,49 @@
             opacity: 0.85;
         }
 
+        /* Repeatability tiers: single row of 1x/3x/5x/10x. Green accent so it
+           reads as a distinct control from the cyan feedrate selector. */
+        .repeat-control-container {
+            width: 100%;
+        }
+
+        .repeat-btn-group {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            width: 100%;
+        }
+
+        .repeat-btn {
+            padding: 10px 6px;
+            border: 1px solid var(--panel-border);
+            background-color: rgba(0, 0, 0, 0.2);
+            color: var(--text-muted);
+            font-weight: 700;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.15s, color 0.15s, border-color 0.15s, transform 0.05s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .repeat-btn:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+        }
+
+        .repeat-btn:active {
+            transform: scale(0.96);
+        }
+
+        .repeat-btn.active {
+            background-color: var(--success);
+            color: var(--text-main);
+            border-color: var(--success);
+            box-shadow: 0 3px 8px rgba(16, 185, 129, 0.25);
+        }
+
         .safety-control-grid {
             display: grid;
             grid-template-columns: 1.2fr 1fr;
@@ -921,7 +964,7 @@
                     <div class="task-control-grid">
                         <button class="primary-task-btn" id="drawBtn" onclick="executeNicholasHaus()">
                             <svg viewBox="0 0 24 24"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3zm0 7.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-                            DRAW NICHOLAS HAUS
+                            <span id="drawBtnLabel">DRAW NICHOLAS HAUS</span>
                         </button>
                     </div>
 
@@ -968,16 +1011,29 @@
                         <div class="speed-btn-group">
                             <button class="speed-btn" id="speedBtn-200" onclick="selectSpeed(200)">
                                 <span class="speed-btn-name">Slow</span>
-                                
+                                <span class="speed-btn-duty">duty 200</span>
                             </button>
                             <button class="speed-btn active" id="speedBtn-220" onclick="selectSpeed(220)">
                                 <span class="speed-btn-name">Normal</span>
-                                
+                                <span class="speed-btn-duty">duty 220</span>
                             </button>
                             <button class="speed-btn" id="speedBtn-240" onclick="selectSpeed(240)">
                                 <span class="speed-btn-name">Fast</span>
-                                
+                                <span class="speed-btn-duty">duty 240</span>
                             </button>
+                        </div>
+                    </div>
+
+                    <div class="repeat-control-container">
+                        <div class="speed-label-wrapper">
+                            <span>REPEATABILITY TEST</span>
+                            <span id="repeat-display">Single pass</span>
+                        </div>
+                        <div class="repeat-btn-group">
+                            <button class="repeat-btn active" id="repeatBtn-1" onclick="selectRepeat(1)">1×</button>
+                            <button class="repeat-btn" id="repeatBtn-3" onclick="selectRepeat(3)">3×</button>
+                            <button class="repeat-btn" id="repeatBtn-5" onclick="selectRepeat(5)">5×</button>
+                            <button class="repeat-btn" id="repeatBtn-10" onclick="selectRepeat(10)">10×</button>
                         </div>
                     </div>
 
@@ -1065,6 +1121,10 @@
         let speedDuty = 220;
         const SPEED_TIERS = { 200: "Slow", 220: "Normal", 240: "Fast" };
 
+        // Repeatability: how many back-to-back passes a START run draws.
+        // Sent to the ESP32 as REPEAT:<n>; the device re-homes between passes.
+        let repeatCount = 1;
+
         // --- LIVE TELEMETRY STATE ---
         // Driven entirely by real messages from the ESP32 over the websocket:
         //   POS:x,y     -> real encoder-derived position in mm (moves the pen tip)
@@ -1141,6 +1201,23 @@
             logToTerminal(`[SPEED]: Draw feedrate set to ${name} (duty ${duty})`);
         }
 
+        function selectRepeat(n) {
+            repeatCount = n;
+            document.getElementById("repeat-display").innerText =
+                (n === 1) ? "Single pass" : (n + " passes");
+            document.querySelectorAll(".repeat-btn").forEach(b => b.classList.remove("active"));
+            document.getElementById("repeatBtn-" + n).classList.add("active");
+
+            const label = document.getElementById("drawBtnLabel");
+            if (label) label.innerText = (n === 1) ? "DRAW NICHOLAS HAUS"
+                                                   : ("DRAW NICHOLAS HAUS ×" + n);
+
+            if (socket && isConnected) {
+                socket.send("REPEAT:" + n);
+            }
+            logToTerminal(`[REPEAT]: Repeatability set to ${n} pass${n === 1 ? "" : "es"}`);
+        }
+
         function initWebSocket() {
             if (socket) {
                 socket.close();
@@ -1160,8 +1237,10 @@
                 activeEmergencyState = false;
                 updateStatusBadge(true);
                 logToTerminal(`<span class='success-highlight'>[ESP32]: WebSocket Connection Established with host node ${targetIp}!</span>`);
-                // Push the currently selected feedrate so the device matches the UI.
+                // Push the currently selected feedrate + repeat count so the
+                // device state matches the UI as soon as we connect.
                 socket.send("SPEED:" + speedDuty);
+                socket.send("REPEAT:" + repeatCount);
                 if (autoReconnectInterval) {
                     clearInterval(autoReconnectInterval);
                     autoReconnectInterval = null;
@@ -1213,6 +1292,14 @@
                     livePathD += `L ${sx.toFixed(2)} ${sy.toFixed(2)} `;
                 }
                 document.getElementById("live-path").setAttribute("d", livePathD.trim());
+                return;
+            }
+
+            // Multi-pass progress: "i/N" -> status bar reads "DRAWING i/N".
+            if (data.startsWith("REPEAT_PROGRESS:")) {
+                const prog = data.substring(16);
+                setDrawStatusBar("DRAWING " + prog, true);
+                logToTerminal(`[REPEAT]: Pass ${prog}`);
                 return;
             }
 
