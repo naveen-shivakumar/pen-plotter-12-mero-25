@@ -151,6 +151,9 @@
             min-height: 0;
         }
 
+        /* Canvas column: stacks the visualizer panel + warnings box in a
+           single grid column, so the warnings box matches the visualizer's
+           width exactly and never crosses into the control panel column. */
         .canvas-column {
             display: flex;
             flex-direction: column;
@@ -469,6 +472,9 @@
             width: 100%;
         }
 
+        /* Speed tiers now stack a name over the raw PWM duty, so the label is
+           honest: the three duties (200/220/240) are a narrow band, not a
+           0.5x..2x spread, so we show "Slow/Normal/Fast" + the actual number. */
         .speed-btn {
             display: flex;
             flex-direction: column;
@@ -519,6 +525,8 @@
             opacity: 0.85;
         }
 
+        /* Repeatability tiers: single row of 1x/3x/5x/10x. Green accent so it
+           reads as a distinct control from the cyan feedrate selector. */
         .repeat-control-container {
             width: 100%;
         }
@@ -725,6 +733,8 @@
             font-weight: 600;
         }
 
+        /* --- WARNINGS PANEL (lives inside canvas-column, so its width
+             always matches the visualizer panel / status bar above it) --- */
         .warning-container {
             display: flex;
             flex-direction: column;
@@ -912,8 +922,11 @@
                     <div class="panel visualizer-panel">
                         <div class="draw-status-bar" id="drawStatusBar">IDLE</div>
                         <svg class="plot-canvas" id="main-vector-preview" viewBox="0 0 300 200">
+                            <!-- Static gallery/template preview (Gallery tab) -->
                             <polyline id="vector-path" points="" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                            <!-- Live draw: STRAIGHT reference segments between real device vertices (VERT:x,y). -->
                             <path id="live-path" d="" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                            <!-- Pen tip: follows real encoder position (POS:x,y) live. -->
                             <circle id="pen-tip" cx="-10" cy="-10" r="5" fill="#f59e0b" stroke="#ffffff" stroke-width="1" />
                         </svg>
                     </div>
@@ -1099,14 +1112,27 @@
         let autoReconnectInterval = null;
         let activeEmergencyState = false;
 
+        // Draw feedrate is now the ACTUAL PWM duty the ESP32 should use.
+        // Slow=200, Normal=220, Fast=240 -- all above the 190 stall floor,
+        // sent verbatim as SPEED:<duty>.
         let speedDuty = 220;
         const SPEED_TIERS = { 200: "Slow", 220: "Normal", 240: "Fast" };
 
+        // Repeatability: how many back-to-back passes a START run draws.
+        // Sent to the ESP32 as REPEAT:<n>; the device re-homes between passes.
         let repeatCount = 1;
 
+        // --- LIVE TELEMETRY STATE ---
+        // Driven entirely by real messages from the ESP32 over the websocket:
+        //   POS:x,y     -> real encoder-derived position in mm (moves the pen tip)
+        //   VERT:x,y    -> a real corner the device reached; UI joins these with
+        //                  STRAIGHT lines (reference figure, not a traced curve)
+        //   PEN:UP/DOWN -> real pen state (DOWN starts a fresh straight stroke)
+        //   STATUS:...  -> mirrors setOled() messages on the device
+        //   WARN:...    -> limit switch hits, redundant pen commands, etc.
         let telemetryPenDown = false;
-        let penJustDown = false;
-        let livePathD = "";
+        let penJustDown = false;   // next VERT should start a new sub-path (MoveTo)
+        let livePathD = "";        // accumulated SVG path data for straight strokes
         let isDrawingActive = false;
 
         const vectors = {
@@ -1115,6 +1141,10 @@
             grid: "10,10 290,10 290,190 10,190 10,10 10,70 290,70 290,130 10,130 10,190 100,190 100,10 190,10 190,190"
         };
 
+        // Maps machine mm coordinates to the SVG canvas, centered on the
+        // Nikolaus Haus bounding box (x:50-75, y:50-90 mm) rather than the
+        // full workspace, so the drawing sits centered regardless of where
+        // "home" physically is.
         const HOUSE_MIN_X = 50, HOUSE_MAX_X = 75;
         const HOUSE_MIN_Y = 50, HOUSE_MAX_Y = 90;
         const CANVAS_W = 300, CANVAS_H = 200;
@@ -1160,6 +1190,8 @@
             document.querySelectorAll(".speed-btn").forEach(btn => btn.classList.remove("active"));
             document.getElementById("speedBtn-" + duty).classList.add("active");
 
+            // Sent as the raw PWM duty. The ESP32 clamps to [190..255] and uses
+            // it directly for moveTo()/JOG_ moves (homing stays fixed).
             if (socket && isConnected) {
                 socket.send("SPEED:" + duty);
             }
@@ -1202,6 +1234,8 @@
                 activeEmergencyState = false;
                 updateStatusBadge(true);
                 logToTerminal(`<span class='success-highlight'>[ESP32]: WebSocket Connection Established with host node ${targetIp}!</span>`);
+                // Push the currently selected feedrate + repeat count so the
+                // device state matches the UI as soon as we connect.
                 socket.send("SPEED:" + speedDuty);
                 socket.send("REPEAT:" + repeatCount);
                 if (autoReconnectInterval) {
@@ -1224,6 +1258,9 @@
         }
 
         function handleTelemetryMessage(data) {
+            // Live position -> move the pen tip ONLY. We deliberately do NOT
+            // draw from POS samples anymore, so encoder jitter/timing no longer
+            // shows up as a wobbly curve.
             if (data.startsWith("POS:")) {
                 const parts = data.substring(4).split(",");
                 const xmm = parseFloat(parts[0]);
@@ -1232,19 +1269,30 @@
                 const [sx, sy] = mmToSvg(xmm, ymm);
                 document.getElementById("pen-tip").setAttribute("cx", sx);
                 document.getElementById("pen-tip").setAttribute("cy", sy);
-
-                if (telemetryPenDown) {
-                    if (penJustDown) {
-                        livePathD += `M ${sx.toFixed(2)} ${sy.toFixed(2)} `;
-                        penJustDown = false;
-                    } else {
-                        livePathD += `L ${sx.toFixed(2)} ${sy.toFixed(2)} `;
-                    }
-                    document.getElementById("live-path").setAttribute("d", livePathD.trim());
-                }
                 return;
             }
 
+            // A real vertex/corner reached by the device -> extend the drawn
+            // figure with a STRAIGHT segment. This is the reference geometry.
+            if (data.startsWith("VERT:")) {
+                const parts = data.substring(5).split(",");
+                const xmm = parseFloat(parts[0]);
+                const ymm = parseFloat(parts[1]);
+                if (isNaN(xmm) || isNaN(ymm)) return;
+                const [sx, sy] = mmToSvg(xmm, ymm);
+                if (penJustDown) {
+                    // Start of a new stroke: MoveTo, no line drawn from the
+                    // previous stroke's end (avoids drawing travel moves).
+                    livePathD += `M ${sx.toFixed(2)} ${sy.toFixed(2)} `;
+                    penJustDown = false;
+                } else {
+                    livePathD += `L ${sx.toFixed(2)} ${sy.toFixed(2)} `;
+                }
+                document.getElementById("live-path").setAttribute("d", livePathD.trim());
+                return;
+            }
+
+            // Multi-pass progress: "i/N" -> status bar reads "DRAWING i/N".
             if (data.startsWith("REPEAT_PROGRESS:")) {
                 const prog = data.substring(16);
                 setDrawStatusBar("DRAWING " + prog, true);
@@ -1254,7 +1302,7 @@
 
             if (data.startsWith("PEN:")) {
                 telemetryPenDown = (data === "PEN:DOWN");
-                if (telemetryPenDown) penJustDown = true;
+                if (telemetryPenDown) penJustDown = true; // next VERT begins a fresh straight stroke
                 logToTerminal(`[PEN]: Device reports pen is ${telemetryPenDown ? "DOWN" : "UP"}.`);
                 return;
             }
